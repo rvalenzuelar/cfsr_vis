@@ -35,7 +35,7 @@ class create(object):
 		self.sufix='.nc'
 
 	def initialize_plot(self,**kwargs):
-		fig = plt.figure()
+		fig = plt.figure(figsize=(8,11))
 
 		grid = ImageGrid( fig,111,
 								nrows_ncols = (3,2),
@@ -65,10 +65,14 @@ class create(object):
 
 			SPD = np.sqrt(u_arrays[i]**2+v_arrays[i]**2)
 
-			cs = self.axes[i].contourf(X,Y,SPD,kwargs['cmap'])
+			cs = self.axes[i].contourf(X,Y,SPD,kwargs['cvalues'])
 			self.axes[i].set_aspect(1)
 			self.axes[i].cax.colorbar(cs)
 	
+		l1='CFSR Reanalysis Isotacs [m/s]\n'
+		l2='Level: '+ str(self.level/100) + 'hPa'
+		plt.suptitle(l1 + l2)
+
 	def temperature(self,**kwargs):
 
 		t_arrays=read_files(self,'temperature')
@@ -82,8 +86,13 @@ class create(object):
 								extent=extent,
 								interpolation=None,
 								vmin=kwargs['vmin'],
-								vmax=kwargs['vmax'])
+								vmax=kwargs['vmax'],
+								cmap='jet')
 			self.axes[i].cax.colorbar(im)
+
+		l1='CFSR Reanalysis Temperature [C]\n'
+		l2='Level: '+ str(self.level/100) + 'hPa'
+		plt.suptitle(l1 + l2)
 
 	def relhumid(self,**kwargs):
 
@@ -93,9 +102,13 @@ class create(object):
 		for i in range(6):
 			
 			cs = self.axes[i].contourf(X,Y,rh_arrays[i],
-										kwargs['cmap'],
+										kwargs['cvalues'],
 										cmap='YlGn')
 			self.axes[i].cax.colorbar(cs)
+
+		l1='CFSR Reanalysis Relative Humidity [%]\n'
+		l2='Level: '+ str(self.level/100) + 'hPa'
+		plt.suptitle(l1 + l2)			
 
 	def absvort(self,**kwargs):
 
@@ -106,10 +119,13 @@ class create(object):
 		for i in range(6):
 			
 			cs = self.axes[i].contourf(X,Y,vort_arrays[i],
-										kwargs['cmap'],
+										kwargs['cvalues'],
 										cmap='YlOrBr')
 			self.axes[i].cax.colorbar(cs)
 
+		l1='CFSR Reanalysis Absolute Vorticity [units]\n'
+		l2='Level: '+ str(self.level/100) + 'hPa'
+		plt.suptitle(l1 + l2)
 
 
 	def windvector(self):
@@ -144,10 +160,10 @@ class create(object):
 								fontsize=12,
 								fmt='%1.0f',)
 
-	def add_coast(self):
+	def add_coast(self,**kwargs):
 
 		M = Basemap(projection='cyl', lat_0=35, lon_0=-130,
-					resolution = 'i', area_thresh = 0.1,
+					resolution = kwargs['res'], area_thresh = 0.1,
 					llcrnrlon=self.domain[0], llcrnrlat=self.domain[3],
 					urcrnrlon=self.domain[1], urcrnrlat=self.domain[2])
 
@@ -161,6 +177,7 @@ class create(object):
 								color = (0.5,0.5,0.5),
 								linewidth = 2,
 								linestyle = '-')
+	
 	def show(self):
 		plt.show()
 

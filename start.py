@@ -32,26 +32,28 @@ def main():
 	cfsr.config(domain=domain, dates=dates, directory=directory)
 
 	cfsr.initialize_plot(level=300)
-	cfsr.isotac(cmap=range(40,70,5))
+	cfsr.isotac(cvalues=range(40,70,5))
 	cfsr.windvector()
 	cfsr.geopotential()
-	# cfsr.add_coast()
+	cfsr.add_coast(res='c')
 
 	cfsr.initialize_plot(level=500)
-	cfsr.absvort(cmap=range(1,6,1))
+	cfsr.absvort(cvalues=range(1,6,1))
 	cfsr.windvector()
 	cfsr.geopotential()
+	cfsr.add_coast(res='c')
 
 	cfsr.initialize_plot(level=700)
-	cfsr.relhumid(cmap=range(50,110,10))
+	cfsr.relhumid(cvalues=range(50,110,10))
 	cfsr.windvector()
 	cfsr.geopotential()
+	cfsr.add_coast(res='c')
 
 	cfsr.initialize_plot(level=1000)
 	cfsr.temperature(vmin=0,vmax=20)
 	cfsr.windvector()
 	cfsr.geopotential()
-
+	cfsr.add_coast(res='c')
 
 	cfsr.show()
 
