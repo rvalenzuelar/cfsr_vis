@@ -17,10 +17,7 @@ def main():
 	lonright=-116
 	lattop=55
 	latbot=20	
-	# lonleft=-180
-	# lonright=0
-	# lattop=90
-	# latbot=0
+
 	domain=[lonleft,lonright,lattop,latbot]
 
 	start=datetime(2001,1,22,18)
@@ -35,26 +32,26 @@ def main():
 	cfsr.config(domain=domain, dates=dates, directory=directory)
 
 	cfsr.initialize_plot(level=300)
-	cfsr.isotac()
+	cfsr.isotac(cmap=range(40,70,5))
 	cfsr.windvector()
 	cfsr.geopotential()
-	# addCFSR.ancillary()
+	# cfsr.add_coast()
 
-	# cfsr.initialize_plot(level=500)
-	# cfsr.absvort()
-	# cfsr.windvector()
-	# cfsr.geopotential()
+	cfsr.initialize_plot(level=500)
+	cfsr.absvort(cmap=range(1,6,1))
+	cfsr.windvector()
+	cfsr.geopotential()
 
-	# cfsr.initialize_plot(level=700)
-	# cfsr.relhumid()
-	# cfsr.windvector()
-	# cfsr.geopotential()
+	cfsr.initialize_plot(level=700)
+	cfsr.relhumid(cmap=range(50,110,10))
+	cfsr.windvector()
+	cfsr.geopotential()
 
-	# cfsr.initialize_plot(level=1000)
-	# cfsr.temperature()
-	# cfsr.windvector()
-	# cfsr.geopotential()
-	# addCFSR.ancillary()
+	cfsr.initialize_plot(level=1000)
+	cfsr.temperature(vmin=0,vmax=20)
+	cfsr.windvector()
+	cfsr.geopotential()
+
 
 	cfsr.show()
 
