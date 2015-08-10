@@ -172,6 +172,9 @@ class create(object):
 			self.axes[i].clabel(cs, 
 								fontsize=12,
 								fmt='%1.0f',)
+			add_date(self,i)
+
+
 
 	def add_coast(self,**kwargs):
 		M = Basemap(projection='cyl', lat_0=35, lon_0=-130,
@@ -295,3 +298,13 @@ def set_limits(self,i):
 	ylim=[self.domain[3],self.domain[2]]
 	self.axes[i].set_xlim(xlim)
 	self.axes[i].set_ylim(ylim)
+
+def add_date(self,i):
+	date=self.dates[i]
+	date=date.strftime('%Y%m%d %H')+' UTC'
+	self.axes[i].text(0.98, 0.05, date,
+			horizontalalignment='right',
+			verticalalignment='center',
+			transform = self.axes[i].transAxes,
+			bbox=dict(facecolor='white'))
+	
