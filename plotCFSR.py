@@ -25,18 +25,20 @@ class create(object):
 		self.sufix=[]
 		self.lats=[]
 		self.lons=[]
+		self.l1=''
+		self.l2=''
+		self.l3=''
+		self.l4=''
 
 	def config(self,**kwargs):
-		
 		self.domain = kwargs['domain']
 		self.dates = kwargs['dates']
 		self.directory = kwargs['directory']
 		self.prefix='/pgbhnl.gdas.'
 		self.sufix='.nc'
 
-	def initialize_plot(self,**kwargs):
-		fig = plt.figure(figsize=(8,11))
-
+	def initialize_plot(self):
+		fig = plt.figure(figsize=(9,13))
 		grid = ImageGrid( fig,111,
 								nrows_ncols = (3,2),
 								axes_pad = 0.0,
@@ -47,39 +49,32 @@ class create(object):
 								cbar_mode="single",
 								cbar_size='1%',
 								aspect=True)		
-
 		# grid = plt.subplots(3,2,sharex=True,sharey=True)
-
 		self.axes = grid
 
-		level = kwargs['level']
-		self.level = level*100 # [Pa]
 
 	def isotac(self,**kwargs):
-
+		self.initialize_plot()
+		self.level = kwargs['level']*100
 		u_arrays=read_files(self,'u')
 		v_arrays=read_files(self,'v')
 		X,Y = np.meshgrid(self.lons,self.lats)
-
+		clevels = kwargs['clevels']
 		for i in range(6):
-
 			SPD = np.sqrt(u_arrays[i]**2+v_arrays[i]**2)
-
-			cs = self.axes[i].contourf(X,Y,SPD,kwargs['cvalues'])
+			cs = self.axes[i].contourf(X,Y,SPD,clevels)
+			set_limits(self,i)
 			self.axes[i].set_aspect(1)
-			self.axes[i].cax.colorbar(cs)
-	
-		l1='CFSR Reanalysis Isotacs [m/s]\n'
-		l2='Level: '+ str(self.level/100) + 'hPa'
-		plt.suptitle(l1 + l2)
+			self.axes[i].cax.colorbar(cs,ticks=clevels)
+		self.l1='CFSR Reanalysis Isotacs [$ms^{-1}$]'
+		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def temperature(self,**kwargs):
-
+		self.initialize_plot()
+		self.level = kwargs['level']*100
 		t_arrays=read_files(self,'temperature')
 		X,Y = np.meshgrid(self.lats,self.lons)
-
 		for i in range(6):
-			
 			extent=[min(self.lons),max(self.lons),
 					min(self.lats),max(self.lats)]
 			im = self.axes[i].imshow(t_arrays[i],
@@ -88,96 +83,116 @@ class create(object):
 								vmin=kwargs['vmin'],
 								vmax=kwargs['vmax'],
 								cmap='jet')
+			set_limits(self,i)
 			self.axes[i].cax.colorbar(im)
-
-		l1='CFSR Reanalysis Temperature [C]\n'
-		l2='Level: '+ str(self.level/100) + 'hPa'
-		plt.suptitle(l1 + l2)
+		self.l1='CFSR Reanalysis Temperature [$^\circ$C]'
+		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def relhumid(self,**kwargs):
-
+		self.initialize_plot()
+		self.level = kwargs['level']*100
 		rh_arrays=read_files(self,'relhumid')
 		X,Y = np.meshgrid(self.lons,self.lats)
-
+		clevels = kwargs['clevels']
 		for i in range(6):
-			
-			cs = self.axes[i].contourf(X,Y,rh_arrays[i],
-										kwargs['cvalues'],
-										cmap='YlGn')
-			self.axes[i].cax.colorbar(cs)
-
-		l1='CFSR Reanalysis Relative Humidity [%]\n'
-		l2='Level: '+ str(self.level/100) + 'hPa'
-		plt.suptitle(l1 + l2)			
+			cf = self.axes[i].contourf(X,Y,rh_arrays[i], clevels, cmap='YlGn')
+			self.axes[i].cax.colorbar(cf,ticks=clevels)
+			set_limits(self,i)
+		self.l1='CFSR Reanalysis Relative Humidity [%]'
+		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def absvort(self,**kwargs):
-
+		self.initialize_plot()
+		self.level = kwargs['level']*100
 		vort_arrays=read_files(self,'absvort')
-
 		X,Y = np.meshgrid(self.lons,self.lats)
-
+		clevels = kwargs['clevels']
 		for i in range(6):
-			
-			cs = self.axes[i].contourf(X,Y,vort_arrays[i],
-										kwargs['cvalues'],
-										cmap='YlOrBr')
-			self.axes[i].cax.colorbar(cs)
+			cs = self.axes[i].contourf(X,Y,vort_arrays[i],clevels,cmap='YlOrBr')
+			self.axes[i].cax.colorbar(cs,ticks=clevels)
+			set_limits(self,i)
+		self.l1='CFSR Reanalysis Absolute Vorticity [$s^{-1}$]'
+		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
-		l1='CFSR Reanalysis Absolute Vorticity [units]\n'
-		l2='Level: '+ str(self.level/100) + 'hPa'
-		plt.suptitle(l1 + l2)
+	def geothickness(self,**kwargs):
+		self.initialize_plot()
+		self.level=kwargs['top']*100 #[Pa]
+		lv1_arrays=read_files(self,'geop')
+		self.level=kwargs['bottom']*100 #[Pa]
+		lv2_arrays=read_files(self,'geop')
+		X,Y = np.meshgrid(self.lons,self.lats)
+		clevels = kwargs['clevels']
+		for i in range(6):
+			thickness=lv1_arrays[i]-lv2_arrays[i]
+			cs = self.axes[i].contourf(X,Y,thickness,clevels,cmap='RdBu_r')
+			self.axes[i].cax.colorbar(cs,ticks=clevels[::2])
+			set_limits(self,i)
+		self.l1='CFSR Reanalysis Geopotential Thickness [m]'
+		self.l2='\nbetween '+ str(kwargs['top']) + ' and '+ str(kwargs['bottom']) + ' hPa'
 
-
-	def windvector(self):
-
+	def windvector(self,**kwargs):
+		if 'level' in kwargs:
+			self.level=kwargs['level']*100 #[Pa]
+			self.l3='\nWind vectors: '+str(kwargs['level'])+' hPa'
 		u_arrays=read_files(self,'u')
 		v_arrays=read_files(self,'v')
 		X,Y = np.meshgrid(self.lons,self.lats)
-		jump = 3
+		jump = kwargs['jump']
+		width = kwargs['width']
+		key = kwargs['key']
 		for i in range(6):
-
 			u = u_arrays[i]
 			v = v_arrays[i]
 			u = u[::jump,::jump]
 			v = v[::jump,::jump]
 			x = X[::jump,::jump]
 			y = Y[::jump,::jump]
+			Q = self.axes[i].quiver(x, y, u, v, 
+									units='dots',
+									scale_units='dots',
+									scale=2.0,
+									width=width)
+			keylab=str(key)+' m/s'
+			self.axes[i].quiverkey(Q, 0.1, 0.05, key, keylab,
+							labelpos='N',
+							coordinates='axes',
+							fontproperties={'weight': 'bold','size':12},
+							color='r',
+							labelcolor='r')
 
-			Q = self.axes[i].quiver(x, y, u, v, units='width')
-			qk = quiverkey(Q, 0.9, 0.95, 10, r'$10 \frac{m}{s}$',
-							labelpos='E',
-							coordinates='figure',
-							fontproperties={'weight': 'bold'})
-
-	def geopotential(self):
-
+	def geopotential(self,**kwargs):
+		if 'level' in kwargs:
+			self.level=kwargs['level']*100 #[Pa]
+			self.l4='\nGeopotential hgt: '+str(kwargs['level'])+' hPa'
 		geop_arrays=read_files(self,'geop')
 		X,Y = np.meshgrid(self.lons,self.lats)
-
 		for i in range(6):
-			cs = self.axes[i].contour(X,Y,geop_arrays[i],colors='k')			
+			hgt=geop_arrays[i]/10 #[dm]
+			cs = self.axes[i].contour(X,Y,hgt,colors='k')			
 			self.axes[i].clabel(cs, 
 								fontsize=12,
 								fmt='%1.0f',)
 
 	def add_coast(self,**kwargs):
-
 		M = Basemap(projection='cyl', lat_0=35, lon_0=-130,
 					resolution = kwargs['res'], area_thresh = 0.1,
-					llcrnrlon=self.domain[0], llcrnrlat=self.domain[3],
-					urcrnrlon=self.domain[1], urcrnrlat=self.domain[2])
-
+					llcrnrlon=self.domain[0], llcrnrlat=self.domain[3]+0.05,
+					urcrnrlon=self.domain[1]+0.01, urcrnrlat=self.domain[2])
 		coastline = M.coastpolygons
-
 		xline= coastline[0][0]
 		yline= coastline[0][1]
-
 		for i in range(6):
 			self.axes[i].plot(xline, yline,
 								color = (0.5,0.5,0.5),
 								linewidth = 2,
 								linestyle = '-')
 	
+	def add_title(self):
+		plt.suptitle(	self.l1 + 
+						self.l2 + 
+						self.l3 + 
+						self.l4)
+
 	def show(self):
 		plt.show()
 
@@ -211,7 +226,7 @@ def read_files(self,var):
 	for d in self.dates:
 		cfsr_file = self.directory+self.prefix+d.strftime('%Y%m%d%H')+self.sufix
 		data=Dataset(cfsr_file,'r')
-		sub=rearrange(data.variables[ncvar][vindx,:,:])
+		sub=shiftgrid(data.variables[ncvar][vindx,:,:])
 		sub=sub[gindx[2]:gindx[3],gindx[0]:gindx[1]]
 
 		if var=='temperature':
@@ -236,24 +251,25 @@ def get_geo_index(self):
 	data.close()
 
 	# longitude lower and upper index
-	lonleft = np.argmin( np.abs( nclons - self.domain[0] ) )
-	lonright = np.argmin( np.abs( nclons - self.domain[1] ) )  
+	lonleft = np.argmin( np.abs( nclons - self.domain[0] ) ) - 1
+	lonright = np.argmin( np.abs( nclons - self.domain[1] ) ) + 1
 
 	# latitude lower and upper index
-	lattop = np.argmin( np.abs( nclats - self.domain[2] ) )
-	latbot = np.argmin( np.abs( nclats - self.domain[3] ) ) 
+	lattop = np.argmin( np.abs( nclats - self.domain[2] ) ) - 1
+	latbot = np.argmin( np.abs( nclats - self.domain[3] ) ) + 1
 
 	if len(self.lons) == 0:
 		self.lons=nclons[lonleft:lonright]
+		# self.lons=nclons
 
 	if len(self.lats) == 0:
 		self.lats=nclats[lattop:latbot]
+		# self.lats=nclats
 
 	return [lonleft,lonright,lattop,latbot]
 
 
 def get_vertical_index(self):
-	
 	d=self.dates[0]
 	cfsr_file = self.directory+self.prefix+d.strftime('%Y%m%d%H')+self.sufix
 	data=Dataset(cfsr_file,'r')
@@ -264,10 +280,18 @@ def get_vertical_index(self):
 	return indx
 
 
-def rearrange(array):
-
+def shiftgrid(array):
+	"""
+	shift grid so it goes from -180 to 180 (instead of 0 to 360
+	in longitude)
+	"""
 	part = np.hsplit(array,2)
 	array_arranged=np.concatenate((part[1],part[0]),axis=1)
 
 	return array_arranged
 
+def set_limits(self,i):
+	xlim=[self.domain[0],self.domain[1]]
+	ylim=[self.domain[3],self.domain[2]]
+	self.axes[i].set_xlim(xlim)
+	self.axes[i].set_ylim(ylim)
