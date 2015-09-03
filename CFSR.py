@@ -17,27 +17,19 @@ import Thermodyn as thermo
 
 
 class create(object):
-	def __init__(self):
-		self.domain=None
-		self.dates=None
-		self.directory=None
-		self.level=[]
-		self.axes=[]
-		self.prefix=[]
-		self.sufix=[]
-		self.lats=[]
-		self.lons=[]
-		self.l1=''
-		self.l2=''
-		self.l3=''
-		self.l4=''
-
-	def config(self,**kwargs):
+	def __init__(self,**kwargs):
 		self.domain = kwargs['domain']
 		self.dates = kwargs['dates']
 		self.directory = kwargs['directory']
-		self.prefix='/pgbhnl.gdas.'
-		self.sufix='.nc'
+		self.level = []
+		self.axes = []
+		self.prefix = '/pgbhnl.gdas.'
+		self.sufix = '.nc'
+		self.lats = []
+		self.lons = []
+		self.l1 = ' '
+		self.l2 = ' '
+		self.l3 = ' '
 
 	def initialize_plot(self):
 		fig = plt.figure(figsize=(8.5,11))
@@ -53,7 +45,7 @@ class create(object):
 								aspect=True)		
 		# grid = plt.subplots(3,2,sharex=True,sharey=True)
 		# fig.tight_layout()
-
+		self.l3=''
 		self.axes = grid
 
 
@@ -70,7 +62,7 @@ class create(object):
 			set_limits(self,i)
 			self.axes[i].set_aspect(1)
 			self.axes[i].cax.colorbar(cs,ticks=clevels)
-		self.l1='CFSR Reanalysis Isotacs [$ms^{-1}$]'
+		self.l1='CFSR Isotacs [$ms^{-1}$]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def temperature(self,**kwargs):
@@ -90,7 +82,7 @@ class create(object):
 								cmap=cmap)
 			set_limits(self,i)
 			self.axes[i].cax.colorbar(im)
-		self.l1='CFSR Reanalysis Temperature [$^\circ$C]'
+		self.l1='CFSR Temperature [$^\circ$C]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def theta(self,**kwargs):
@@ -106,9 +98,29 @@ class create(object):
 			press = np.zeros(mixr.shape)+kwargs['level'] #[hPa]
 			theta = thermo.theta2(C=t_arrays[i],hPa=press,mixing_ratio=mixr)
 			cf = self.axes[i].contourf(X,Y,theta, clevels, cmap=cmap)
-			self.axes[i].cax.colorbar(cf,ticks=clevels)
+			self.axes[i].cax.colorbar(cf,ticks=clevels[::4])
 			set_limits(self,i)
-		self.l1='CFSR Reanalysis Potential Temperature [K]'
+		self.l1='CFSR Potential Temperature [K]'
+		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+
+	def thetaeq(self,**kwargs):
+		self.initialize_plot()
+		self.level = kwargs['level']*100
+		cmap = kwargs['cmap']
+		t_arrays=read_files(self,'temperature') # [C]
+		q_arrays=read_files(self,'sphum') # [kg/kg]
+		rh_arrays=read_files(self,'relhumid')		
+		X,Y = np.meshgrid(self.lons,self.lats)
+		clevels = kwargs['clevels']
+		for i in range(6):
+			mixr = thermo.mixing_ratio(specific_humidity= q_arrays[i])
+			press = np.zeros(mixr.shape)+kwargs['level'] #[hPa]
+			theta = thermo.theta_equiv2(C=t_arrays[i],hPa=press,
+										mixing_ratio=mixr,relh=rh_arrays[i])
+			cf = self.axes[i].contourf(X,Y,theta, clevels, cmap=cmap)
+			self.axes[i].cax.colorbar(cf,ticks=clevels[::4])
+			set_limits(self,i)
+		self.l1='CFSR Equivalent Potential Temperature [K]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def relhumid(self,**kwargs):
@@ -122,7 +134,7 @@ class create(object):
 			cf = self.axes[i].contourf(X,Y,rh_arrays[i], clevels, cmap=cmap)
 			self.axes[i].cax.colorbar(cf,ticks=clevels)
 			set_limits(self,i)
-		self.l1='CFSR Reanalysis Relative Humidity [%]'
+		self.l1='CFSR Relative Humidity [%]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def absvort(self,**kwargs):
@@ -136,7 +148,7 @@ class create(object):
 			cs = self.axes[i].contourf(X,Y,vort_arrays[i],clevels,cmap=cmap)
 			self.axes[i].cax.colorbar(cs,ticks=clevels)
 			set_limits(self,i)
-		self.l1='CFSR Reanalysis Absolute Vorticity [$s^{-1}$]'
+		self.l1='CFSR Absolute Vorticity [$s^{-1}$]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
 	def geothickness(self,**kwargs):
@@ -153,20 +165,21 @@ class create(object):
 			cs = self.axes[i].contourf(X,Y,thickness,clevels,cmap=cmap)
 			self.axes[i].cax.colorbar(cs,ticks=clevels[::2])
 			set_limits(self,i)
-		self.l1='CFSR Reanalysis Geopotential Thickness [m]'
-		self.l2='\nbetween '+ str(kwargs['top']) + ' and '+ str(kwargs['bottom']) + ' hPa'
+		self.l1='CFSR ' + str(kwargs['top']) + ' - '+ str(kwargs['bottom']) + ' hPa' +' Geopotential Thickness [m]'
+		# self.l2='\nbetween '+ str(kwargs['top']) + ' and '+ str(kwargs['bottom']) + ' hPa'
 
 	def windvector(self,**kwargs):
 		if 'level' in kwargs:
 			self.level=kwargs['level']*100 #[Pa]
-			self.l3='\nWind vectors: '+str(kwargs['level'])+' hPa'
+			self.l2='\nWind vectors: '+str(kwargs['level'])+' hPa'
 		u_arrays=read_files(self,'u')
 		v_arrays=read_files(self,'v')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		jump = kwargs['jump']
 		width = kwargs['width']
 		key = kwargs['key']
-		color = kwargs['color']
+		colorkey = kwargs['colorkey']
+		scale = kwargs['scale']
 		for i in range(6):
 			u = u_arrays[i]
 			v = v_arrays[i]
@@ -177,20 +190,21 @@ class create(object):
 			Q = self.axes[i].quiver(x, y, u, v, 
 									units='dots',
 									scale_units='dots',
-									scale=2.0,
-									width=width)
+									scale=scale,
+									width=width,
+									zorder=9)
 			keylab=str(key)+' m/s'
 			self.axes[i].quiverkey(Q, 0.15, 0.05, key, keylab,
 							labelpos='N',
 							coordinates='axes',
 							fontproperties={'weight': 'bold','size':12},
-							color=color,
-							labelcolor=color)
+							color=colorkey,
+							labelcolor=colorkey)
 
 	def geopotential(self,**kwargs):
 		if 'level' in kwargs:
 			self.level=kwargs['level']*100 #[Pa]
-			self.l4='\nGeopotential hgt: '+str(kwargs['level'])+' hPa'
+			self.l3='\nGeopotential hgt: '+str(kwargs['level'])+' hPa\n'
 		geop_arrays=read_files(self,'geop')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		for i in range(6):
@@ -199,9 +213,6 @@ class create(object):
 			self.axes[i].clabel(cs, 
 								fontsize=12,
 								fmt='%1.0f',)
-			# add_date(self,i)
-
-
 
 	def add_coast(self,**kwargs):
 		M = Basemap(projection='cyl', lat_0=35, lon_0=-130,
@@ -218,10 +229,7 @@ class create(object):
 								linestyle = '-')
 	
 	def add_title(self):
-		plt.suptitle(	self.l1 + 
-						self.l2 + 
-						self.l3 + 
-						self.l4)
+		plt.suptitle(	self.l1 + self.l2 + self.l3 )
 
 	def add_date(self):
 		for i in range(6):
@@ -233,6 +241,29 @@ class create(object):
 					transform = self.axes[i].transAxes,
 					bbox=dict(facecolor='white'),
 					zorder=10)
+
+	def add_location(self,locname):
+
+		if locname == 'bby':
+			label='BBY'
+
+		for i in range(6):
+			if i == 0:
+				self.axes[i].plot(-123.09,38.30,'o',markersize=4)
+				self.axes[i].annotate(label,xy=(-123.09,38.30),
+											xycoords='data',
+											xytext=(-121.0,41.),
+											textcoords='data',
+											size=15,
+											color='b',
+											arrowprops=dict(arrowstyle="-",
+																fc='b',
+																ec='b',
+																lw=2))
+			else:
+				self.axes[i].plot(-123.09,38.30,'o',markersize=4)
+
+
 
 	def show(self):
 		plt.show()

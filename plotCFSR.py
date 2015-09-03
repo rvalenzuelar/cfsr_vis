@@ -8,7 +8,7 @@
 
 from datetime import datetime,timedelta
 
-import plotCFSR
+import CFSR
 
 def main():
 
@@ -27,57 +27,55 @@ def main():
 	directory='/home/rvalenzuela/CFSR/case03'
 	# directory='/Users/raulv/Desktop/CFSR'
 
-	cfsr=plotCFSR.create()
-	cfsr.config(domain=domain, dates=dates, directory=directory)
+	cfsr = CFSR.create(domain=domain, dates=dates, directory=directory)
 
-	cfsr.isotac(level=300, clevels=range(40,75,5))
-	cfsr.windvector(jump=5, width=1.5, key=40,color='k')
-	cfsr.geopotential()
-	cfsr.add_coast(res='c')
-	cfsr.add_date()
-	cfsr.add_title()
+	# cfsr.isotac(level=300, clevels=range(40,75,5))
+	# cfsr.windvector(jump=5, width=1.5, scale=2.0, key=40,colorkey='r')
+	# cfsr.geopotential()
+	# cfsr.add_coast(res='c')
+	# cfsr.add_date()
+	# cfsr.add_title()
+	# cfsr.add_location('bby')
 
-	cfsr.absvort(level=500, clevels=range(1,6,1),cmap='YlOrBr')
-	cfsr.windvector(jump=5, width=1.5, key=40,color='k')
-	cfsr.geopotential()
-	cfsr.add_coast(res='c')
-	cfsr.add_date()
-	cfsr.add_title()
+	# cfsr.absvort(level=500, clevels=range(1,6,1),cmap='YlOrBr')
+	# cfsr.windvector(jump=5, width=1.5, scale=2.0, key=40,colorkey='r')
+	# cfsr.geopotential()
+	# cfsr.add_coast(res='c')
+	# cfsr.add_date()
+	# cfsr.add_title()
+	# cfsr.add_location('bby')
 
-	cfsr.relhumid(level=700, clevels=range(90,102,2),cmap='YlGn')
-	cfsr.windvector(jump=5, width=1.5, key=20,color='k')
-	cfsr.geopotential()
-	cfsr.add_coast(res='c')
-	cfsr.add_date()
-	cfsr.add_title()
+	# cfsr.relhumid(level=700, clevels=range(90,102,2),cmap='YlGn')
+	# cfsr.windvector(jump=5, width=1.5, scale=1.0, key=20,colorkey='r')
+	# cfsr.geopotential()
+	# cfsr.add_coast(res='c')
+	# cfsr.add_date()
+	# cfsr.add_title()
+	# cfsr.add_location('bby')
 
 	cfsr.temperature(level=1000, vmin=0,vmax=20,cmap='jet')
-	cfsr.windvector(jump=5, width=1.5, key=20,color='k')
+	cfsr.windvector(jump=5, width=1.5, scale=1.0, key=20,colorkey='white')
 	cfsr.geopotential()
 	cfsr.add_coast(res='c')
 	cfsr.add_date()
 	cfsr.add_title()
+	cfsr.add_location('bby')
+
+	cfsr.thetaeq(level=975, clevels=range(276,342,2),cmap='Accent')
+	cfsr.windvector(jump=5, width=1.5, scale=1.0, key=20,colorkey='white')
+	cfsr.geopotential()
+	cfsr.add_coast(res='c')
+	cfsr.add_date()	
+	cfsr.add_title()
+	cfsr.add_location('bby')
 
 	cfsr.geothickness(top=800, bottom=1000, clevels=range(1720,1900,10),cmap='RdBu_r')
-	cfsr.windvector(level=900, jump=5, width=1.5, key=30,color='k')
+	cfsr.windvector(level=900, jump=5, width=1.5, scale=1.0, key=30,colorkey='white')
 	cfsr.geopotential(level=500)
 	cfsr.add_coast(res='c')
 	cfsr.add_date()
 	cfsr.add_title()
-
-	cfsr.theta(level=975, clevels=range(268,298,2),cmap='coolwarm')
-	cfsr.windvector(jump=5, width=1.5, key=30,color='white')
-	cfsr.geopotential()
-	cfsr.add_coast(res='c')
-	cfsr.add_date()
-	cfsr.add_title()
-
-	# cfsr.thetaeq(level=975, clevels=range(270,355,5))
-	# cfsr.windvector(jump=5, width=1.5, key=40)
-	# # cfsr.geopotential()
-	# cfsr.add_coast(res='c')
-	# cfsr.add_title()
-
+	cfsr.add_location('bby')
 
 	cfsr.show()
 
