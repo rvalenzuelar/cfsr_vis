@@ -19,30 +19,40 @@ def main():
 
 	domain=[lonleft,lonright,lattop,latbot]
 
-	start=datetime(2001,1,23,0)
-	end=datetime(2001,1,24,6)
+	local_directory='/home/rvalenzuela/'
+	# directory='/Users/raulv/Desktop/'
+
+	case = raw_input('\nIndicate case (e.g. 1): ')
+	base_directory=local_directory +'CFSR/case'+case.zfill(2)
+	print base_directory
+
+	
+	if case=='3':
+		start=datetime(2001,1,23,0)
+		end=datetime(2001,1,24,6)
+	elif case=='7':
+		start=datetime(2001,2,17,6)
+		end=datetime(2001,2,18,6)
+
 	delta=timedelta(hours=6)
 	dates=get_dates(start,end,delta)
 
-	directory='/home/rvalenzuela/CFSR/case03'
-	# directory='/Users/raulv/Desktop/CFSR'
-
-	cfsr = CFSR.create(domain=domain, dates=dates, directory=directory,
+	cfsr = CFSR.create(domain=domain, dates=dates, directory=base_directory,
 							zboundary=600)
 
-	# cfsr.isotac(level=300, clevels=range(40,75,5))
-	# cfsr.windvector(jump=5, width=1.5, scale=2.0, key=40,colorkey='r')
-	# cfsr.geopotential()
-	# cfsr.add_coast(res='c')
-	# cfsr.add_date()
-	# cfsr.add_title()
-	# cfsr.add_location('bby')
+	cfsr.isotac(level=300, clevels=range(40,75,5),cmap='jet')
+	cfsr.windvector(jump=5, width=1.0, scale=2.0, key=40,colorkey='r')
+	cfsr.geopotential(level=300, clevels=range(830,970,10))
+	cfsr.surfpressure(clevels=range(980,1034,4))
+	cfsr.add_coast(res='c')
+	cfsr.add_title()
+	cfsr.add_location('bby')
 
 	# cfsr.absvort(level=500, clevels=range(1,6,1),cmap='YlOrBr')
-	# cfsr.windvector(jump=5, width=1.5, scale=2.0, key=40,colorkey='r')
-	# cfsr.geopotential()
+	# cfsr.windvector(level=500, jump=5, width=1.0, scale=2.0, key=40,colorkey='r')
+	# cfsr.geopotential(level=500, clevels=range(520,600,10))
+	# cfsr.surfpressure(clevels=range(980,1034,4))
 	# cfsr.add_coast(res='c')
-	# cfsr.add_date()
 	# cfsr.add_title()
 	# cfsr.add_location('bby')
 
@@ -50,7 +60,6 @@ def main():
 	# cfsr.windvector(jump=5, width=1.5, scale=1.0, key=20,colorkey='r')
 	# cfsr.geopotential()
 	# cfsr.add_coast(res='c')
-	# cfsr.add_date()
 	# cfsr.add_title()
 	# cfsr.add_location('bby')
 
@@ -58,7 +67,6 @@ def main():
 	# cfsr.windvector(jump=5, width=1.5, scale=1.0, key=20,colorkey='white')
 	# cfsr.geopotential()
 	# cfsr.add_coast(res='c')
-	# cfsr.add_date()
 	# cfsr.add_title()
 	# cfsr.add_location('bby')
 
@@ -66,16 +74,15 @@ def main():
 	# cfsr.windvector(level=900, jump=5, width=1.5, scale=1.0, key=30,colorkey='white')
 	# cfsr.geopotential(level=500)
 	# cfsr.add_coast(res='c')
-	# cfsr.add_date()
 	# cfsr.add_title()
 	# cfsr.add_location('bby')
 
-	# cfsr.thetaeq(level=900, clevels=range(276,328,2),cmap='RdBu_r')
-	# cfsr.windvector(jump=5, width=1.5, scale=1.0, key=20,colorkey='b')
-	# cfsr.geopotential()
-	# cfsr.add_coast(res='c')
-	# cfsr.add_title()
-	# cfsr.add_location('bby')
+	cfsr.thetaeq(level=800, clevels=range(276,328,2),cmap='RdBu_r')
+	cfsr.windvector(level=1000, jump=5, width=1.0, scale=1.0, key=20,colorkey='b')
+	cfsr.surfpressure(clevels=range(980,1034,4))
+	cfsr.add_coast(res='c')
+	cfsr.add_title()
+	cfsr.add_location('bby')
 
 	# cfsr.cross_section(field='thetaeq', orientation=['zonal',38.30], 
 	# 					clevels=range(276,318,2),cmap='RdBu_r')
@@ -93,19 +100,19 @@ def main():
 	# 					clevels=[range(276,328,2), range(-15,20,5)],
 	# 					cmap='RdBu_r')
 
-	cfsr.cross_section(field='thetaeq+U', orientation=['zonal',38.30], 
-						clevels=[range(276,328,2), range(-15,20,5)],
-						cmap='RdBu_r')
+	# cfsr.cross_section(field='thetaeq+U', orientation=['zonal',38.30], 
+	# 					clevels=[range(276,328,2), range(-15,20,5)],
+	# 					cmap='RdBu_r')
 
-	cfsr.cross_section(field='thetaeq+V', orientation=['zonal',38.30], 
-						clevels=[range(276,328,2), range(-15,20,5)],
-						cmap='RdBu_r')
+	# cfsr.cross_section(field='thetaeq+V', orientation=['zonal',38.30], 
+	# 					clevels=[range(276,328,2), range(-15,20,5)],
+	# 					cmap='RdBu_r')
 
 	# cfsr.cross_section(field='thetaeq+V', orientation=['zonal',35.], 
 	# 				clevels=[range(276,328,2), range(-15,20,5)],
 	# 				cmap='RdBu_r')
 
-	cfsr.show()
+	cfsr.show('ipython')
 
 
 def get_dates(start,end,delta):

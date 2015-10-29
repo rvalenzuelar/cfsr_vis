@@ -70,12 +70,16 @@ class create(object):
 		v_arrays=read_files(self,'v')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		clevels = kwargs['clevels']
+		cmap = kwargs['cmap']
+
 		for i in range(6):
 			SPD = np.sqrt(u_arrays[i]**2+v_arrays[i]**2)
-			cs = self.axes[i].contourf(X,Y,SPD,clevels)
+			cs = self.axes[i].contourf(X,Y,SPD,clevels,cmap=cmap)
 			set_limits(self,i)
 			self.axes[i].set_aspect(1)
 			self.axes[i].cax.colorbar(cs,ticks=clevels)
+			self.add_date(i)
+
 		self.l1='CFSR Isotacs [$ms^{-1}$]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
@@ -95,7 +99,9 @@ class create(object):
 								vmax=kwargs['vmax'],
 								cmap=cmap)
 			set_limits(self,i)
+			self.add_date(i)
 			self.axes[i].cax.colorbar(im)
+
 		self.l1='CFSR Temperature [$^\circ$C]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
@@ -114,6 +120,8 @@ class create(object):
 			cf = self.axes[i].contourf(X,Y,theta, clevels, cmap=cmap)
 			self.axes[i].cax.colorbar(cf,ticks=clevels[::4])
 			set_limits(self,i)
+			self.add_date(i)
+
 		self.l1='CFSR Potential Temperature [K]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
@@ -135,8 +143,7 @@ class create(object):
 			self.axes[i].cax.colorbar(cf,ticks=clevels[::4])
 			set_limits(self,i)
 			self.add_date(i)
-		self.l1='CFSR Equivalent Potential Temperature [K]'
-		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+		self.l1='CFSR Equivalent Potential Temperature [K] at ' + str(self.level/100) + ' hPa'
 
 	def relhumid(self,**kwargs):
 		self.initialize_plot()
@@ -149,6 +156,8 @@ class create(object):
 			cf = self.axes[i].contourf(X,Y,rh_arrays[i], clevels, cmap=cmap)
 			self.axes[i].cax.colorbar(cf,ticks=clevels)
 			set_limits(self,i)
+			self.add_date(i)
+
 		self.l1='CFSR Relative Humidity [%]'
 		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
 
@@ -163,8 +172,29 @@ class create(object):
 			cs = self.axes[i].contourf(X,Y,vort_arrays[i],clevels,cmap=cmap)
 			self.axes[i].cax.colorbar(cs,ticks=clevels)
 			set_limits(self,i)
-		self.l1='CFSR Absolute Vorticity [$s^{-1}$]'
-		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+			self.add_date(i)
+
+		self.l1='CFSR Absolute Vorticity [$s^{-1}$] at ' + str(self.level/100) + 'hPa'
+		
+
+	def surfpressure(self,**kwargs):
+		# self.initialize_plot()
+		# self.level = kwargs['level']*100
+		# cmap = kwargs['cmap']
+		mslp_arrays=read_files(self,'mslp')
+		X,Y = np.meshgrid(self.lons,self.lats)
+		clevels = kwargs['clevels']
+		for i in range(6):
+			# cs = self.axes[i].contourf(X,Y,mslp_arrays[i],clevels,cmap=cmap)
+			cs = self.axes[i].contour(X,Y,mslp_arrays[i]/100.,clevels,colors='grey')
+			# self.axes[i].cax.colorbar(cs,ticks=clevels)
+			self.axes[i].clabel(cs,clevels[::2],fontsize=12,	fmt='%1.0f')
+			set_limits(self,i)
+			# self.add_date(i)
+
+		# self.l2='CFSR Mean sea level pressure [hPa]'
+		# self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+		# self.l2=''
 
 	def geothickness(self,**kwargs):
 		self.initialize_plot()
@@ -180,6 +210,8 @@ class create(object):
 			cs = self.axes[i].contourf(X,Y,thickness,clevels,cmap=cmap)
 			self.axes[i].cax.colorbar(cs,ticks=clevels[::2])
 			set_limits(self,i)
+			self.add_date(i)
+
 		self.l1='CFSR ' + str(kwargs['top']) + ' - '+ str(kwargs['bottom']) + ' hPa' +' Geopotential Thickness [m]'
 		# self.l2='\nbetween '+ str(kwargs['top']) + ' and '+ str(kwargs['bottom']) + ' hPa'
 
@@ -220,28 +252,33 @@ class create(object):
 		if 'level' in kwargs:
 			self.level=kwargs['level']*100 #[Pa]
 			self.l3='\nGeopotential hgt: '+str(kwargs['level'])+' hPa\n'
+		clevels=kwargs['clevels']
 		geop_arrays=read_files(self,'geop')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		for i in range(6):
 			hgt=geop_arrays[i]/10 #[dm]
-			cs = self.axes[i].contour(X,Y,hgt,colors='k',linewidths=0.5)			
-			self.axes[i].clabel(cs, 
-								fontsize=12,
-								fmt='%1.0f',)
+			cs = self.axes[i].contour(X,Y,hgt,clevels,colors='k',linewidths=2.0)			
+			self.axes[i].clabel(cs, clevels[::2], fontsize=12,	fmt='%1.0f')
 
 	def add_coast(self,**kwargs):
+
 		M = Basemap(projection='cyl', lat_0=35, lon_0=-130,
 					resolution = kwargs['res'], area_thresh = 0.1,
 					llcrnrlon=self.domain[0], llcrnrlat=self.domain[3]+0.05,
 					urcrnrlon=self.domain[1]+0.01, urcrnrlat=self.domain[2])
 		coastline = M.coastpolygons
-		xline= coastline[0][0]
-		yline= coastline[0][1]
+		xlinec = coastline[0][0] 
+		ylinec = coastline[0][1] 
+		xlinec2 = coastline[1][0] 
+		ylinec2 = coastline[1][1] 
 		for i in range(6):
-			self.axes[i].plot(xline, yline,
-								color = (0.5,0.5,0.5),
-								linewidth = 2,
-								linestyle = '-')
+			self.axes[i].plot(xlinec, ylinec,color = 'k',linewidth = 1,	linestyle = '-')
+			self.axes[i].plot(xlinec2, ylinec2,color = 'k',linewidth = 1,	linestyle = '-') #Vancouver Island
+			
+			''' I had to comment line 1905 and 1949 in basemap/_init_.py so
+			tickmarks show up when using these methods'''
+			M.drawcountries(ax=self.axes[i])
+			M.drawstates(ax=self.axes[i])	
 	
 	def add_title(self):
 		plt.suptitle(	self.l1 + self.l2 + self.l3 )
@@ -263,8 +300,8 @@ class create(object):
 			label='BBY'
 
 		for i in range(6):
+			self.axes[i].plot(-123.09,38.30,'o',markersize=8,color='b')
 			if i == 0:
-				self.axes[i].plot(-123.09,38.30,'o',markersize=4,color='b')
 				self.axes[i].annotate(label,xy=(-123.09,38.30),
 											xycoords='data',
 											xytext=(-121.0,41.),
@@ -275,8 +312,7 @@ class create(object):
 																fc='b',
 																ec='b',
 																lw=2))
-			else:
-				self.axes[i].plot(-123.09,38.30,'o',markersize=4,color='b')
+
 
 
 	def cross_section(self,**kwargs):
@@ -348,7 +384,7 @@ class create(object):
 			cboundaries=bounds
 			cticks=bounds	
 			boundsc=bounds		
-			ti = ' - Wind speed meridional component [m s-1]'
+			ti = ' - Wind speed meridional component [m s-1]'	
 		elif field == 'thetaeq+U':
 			for i in range(6):
 				mixr = thermo.mixing_ratio(specific_humidity= q_arrays[i])
@@ -429,9 +465,12 @@ class create(object):
 			t2='\nLongitude: ' + str(self.orientation[1])
 		plt.suptitle(t1+t2)
 
-	def show(self):
-		# plt.show(block=False)
-		plt.show()
+	def show(self, mode):
+		if mode=='terminal':
+			plt.show()	
+		elif mode=='ipython':
+			plt.show(block=False)
+		
 
 
 '''			LOCAL FUNCTIONS
@@ -456,15 +495,19 @@ def read_files(self,var):
 		ncvar='ABSV_P0_L100_GLL0'
 	elif var == 'sphum':
 		ncvar='SPFH_P0_L100_GLL0'# [kg kg-1]
-
+	elif var == 'mslp':
+		ncvar='PRMSL_P0_L101_GLL0'
 	
 	gindx=get_geo_index(self) # horizontal index
 	array=[]
 	for d in self.dates:
-		if self.horizontal:
+		if self.horizontal and var != 'mslp':
 			vindx=get_vertical_index(self) # vertical index
 			data=get_horizontal_field(self,d,ncvar,vindx)
 			data=data[gindx[2]:gindx[3],gindx[0]:gindx[1]]
+		elif self.horizontal and var == 'mslp':
+			data=get_horizontal_field2(self,d,ncvar)
+			data=data[gindx[2]:gindx[3],gindx[0]:gindx[1]]			
 		else:
 			data=get_vertical_field(self,d,ncvar,gindx)
 
@@ -481,15 +524,22 @@ def get_horizontal_field(self,date,ncvar,vindx):
 
 	cfsr_file = self.directory+self.prefix+date.strftime('%Y%m%d%H')+self.sufix
 	data=Dataset(cfsr_file,'r')
-	# array_out = data.variables[ncvar][vindx,:,:]
 	array_out = data.variables[ncvar][:,:,:]
-	array_out=shiftgrid(array_out)
+	array_out=shiftgrid(array_out,axis=2)
 	array_out=array_out[vindx,:,:]
-
 	data.close()
-	# array_out=shiftgrid(array_out)
+	
 	return array_out
 
+def get_horizontal_field2(self,date,ncvar):
+
+	cfsr_file = self.directory+self.prefix+date.strftime('%Y%m%d%H')+self.sufix
+	data=Dataset(cfsr_file,'r')
+	array_out = data.variables[ncvar][:,:]
+	array_out=shiftgrid(array_out,axis=1)
+	data.close()
+	
+	return array_out
 
 def get_vertical_field(self,date,ncvar,gindx):
 
@@ -497,7 +547,7 @@ def get_vertical_field(self,date,ncvar,gindx):
 	data=Dataset(cfsr_file,'r')
 	if self.orientation[0] == 'zonal':
 		array_out = data.variables[ncvar][:,:, :]
-		array_out = shiftgrid(array_out)
+		array_out = shiftgrid(array_out,axis=2)
 		array_out = array_out[:, gindx[2], gindx[0]:gindx[1]]
 		
 	
@@ -542,14 +592,6 @@ def get_geo_index(self):
 	lattop = np.argmin( np.abs( nclats - self.domain[2] ) ) - 1
 	latbot = np.argmin( np.abs( nclats - self.domain[3] ) ) + 1
 
-	# if len(self.lons) == 0:
-	# 	self.lons=nclons[lonleft:lonright]
-	# 	# self.lons=nclons
-
-	# if len(self.lats) == 0:
-	# 	self.lats=nclats[lattop:latbot]
-	# 	# self.lats=nclats
-
 	if self.horizontal:
 		self.lons=nclons[lonleft:lonright]
 		self.lats=nclats[lattop:latbot]
@@ -584,20 +626,21 @@ def get_vertical_array(self):
 	return ncisob
 
 
-def shiftgrid(array):
+def shiftgrid(array,**kwargs):
+
 	"""
 	shift grid so it goes from -180 to 180 (instead of 0 to 360
 	in longitude)
 	"""
-	# part = np.hsplit(array,2)
-	# array_arranged=np.concatenate((part[1],part[0]),axis=1)
 
-	parts = np.split(array,2,axis=2) # 3D meridional incision
-	array_arranged=np.concatenate((parts[1],parts[0]),axis=2)
+	axis=kwargs['axis']
+	parts = np.split(array,2,axis=axis) # 3D meridional incision
+	array_arranged=np.concatenate((parts[1],parts[0]),axis=axis)
 
 	return array_arranged
 
 def set_limits(self,i):
+
 	if self.horizontal:
 		xlim=[self.domain[0],self.domain[1]]
 		ylim=[self.domain[3],self.domain[2]]
