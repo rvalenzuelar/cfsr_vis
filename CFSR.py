@@ -80,8 +80,7 @@ class create(object):
 			self.axes[i].cax.colorbar(cs,ticks=clevels)
 			self.add_date(i)
 
-		self.l1='CFSR Isotacs [$ms^{-1}$]'
-		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+		self.l1='CFSR Isotacs [$ms^{-1}$] at '+ str(self.level/100) + ' hPa'
 
 	def temperature(self,**kwargs):
 		self.initialize_plot()
@@ -102,8 +101,7 @@ class create(object):
 			self.add_date(i)
 			self.axes[i].cax.colorbar(im)
 
-		self.l1='CFSR Temperature [$^\circ$C]'
-		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+		self.l1='CFSR Temperature [$^\circ$C] at ' + str(self.level/100) + ' hPa'
 
 	def theta(self,**kwargs):
 		self.initialize_plot()
@@ -122,8 +120,7 @@ class create(object):
 			set_limits(self,i)
 			self.add_date(i)
 
-		self.l1='CFSR Potential Temperature [K]'
-		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+		self.l1='CFSR Potential Temperature [K] at ' + str(self.level/100) + ' hPa'
 
 	def thetaeq(self,**kwargs):
 		self.initialize_plot()
@@ -158,8 +155,7 @@ class create(object):
 			set_limits(self,i)
 			self.add_date(i)
 
-		self.l1='CFSR Relative Humidity [%]'
-		self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
+		self.l1='CFSR Relative Humidity [%] at ' + str(self.level/100) + ' hPa'
 
 	def absvort(self,**kwargs):
 		self.initialize_plot()
@@ -174,7 +170,7 @@ class create(object):
 			set_limits(self,i)
 			self.add_date(i)
 
-		self.l1='CFSR Absolute Vorticity [$s^{-1}$] at ' + str(self.level/100) + 'hPa'
+		self.l1='CFSR Absolute Vorticity [$s^{-1}$] at ' + str(self.level/100) + ' hPa'
 		
 
 	def surfpressure(self,**kwargs):
@@ -192,10 +188,8 @@ class create(object):
 			set_limits(self,i)
 			# self.add_date(i)
 
-		# self.l2='CFSR Mean sea level pressure [hPa]'
-		# self.l2='\nLevel: '+ str(self.level/100) + 'hPa'
-		# self.l2=''
-
+		self.l3='\nMean sea level pressure [hPa]'
+		
 	def geothickness(self,**kwargs):
 		self.initialize_plot()
 		self.level=kwargs['top']*100 #[Pa]
@@ -203,12 +197,19 @@ class create(object):
 		self.level=kwargs['bottom']*100 #[Pa]
 		lv2_arrays=read_files(self,'geop')
 		X,Y = np.meshgrid(self.lons,self.lats)
-		clevels = kwargs['clevels']
+		try:
+			clevels=kwargs['clevels']
+		except KeyError:
+			clevels=None
 		cmap = kwargs['cmap']		
 		for i in range(6):
 			thickness=lv1_arrays[i]-lv2_arrays[i]
-			cs = self.axes[i].contourf(X,Y,thickness,clevels,cmap=cmap)
-			self.axes[i].cax.colorbar(cs,ticks=clevels[::2])
+			if clevels:
+				cs = self.axes[i].contourf(X,Y,thickness,clevels,cmap=cmap)
+				self.axes[i].cax.colorbar(cs,ticks=clevels[::2])
+			else:
+				cs = self.axes[i].contourf(X,Y,thickness,cmap=cmap)
+				self.axes[i].cax.colorbar(cs)				
 			set_limits(self,i)
 			self.add_date(i)
 
@@ -252,13 +253,20 @@ class create(object):
 		if 'level' in kwargs:
 			self.level=kwargs['level']*100 #[Pa]
 			self.l3='\nGeopotential hgt: '+str(kwargs['level'])+' hPa\n'
-		clevels=kwargs['clevels']
+		try:
+			clevels=kwargs['clevels']
+		except KeyError:
+			clevels=None
 		geop_arrays=read_files(self,'geop')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		for i in range(6):
 			hgt=geop_arrays[i]/10 #[dm]
-			cs = self.axes[i].contour(X,Y,hgt,clevels,colors='k',linewidths=2.0)			
-			self.axes[i].clabel(cs, clevels[::2], fontsize=12,	fmt='%1.0f')
+			if clevels:
+				cs = self.axes[i].contour(X,Y,hgt,clevels,colors='k',linewidths=2.0)			
+				self.axes[i].clabel(cs, clevels[::2], fontsize=12, fmt='%1.0f')
+			else:
+				cs = self.axes[i].contour(X,Y,hgt,colors='k',linewidths=2.0)			
+				self.axes[i].clabel(cs, fontsize=12, fmt='%1.0f')
 
 	def add_coast(self,**kwargs):
 
