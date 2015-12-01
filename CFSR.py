@@ -33,6 +33,7 @@ class create(object):
 		self.l1 = ' '
 		self.l2 = ' '
 		self.l3 = ' '
+		self.series={}
 		self.horizontal=True
 		self.orientation=None
 		self.hboundary=None
@@ -40,12 +41,12 @@ class create(object):
 
 	def initialize_plot(self):
 		fig = plt.figure(figsize=(8.5,11))
-
+		nrows = len(self.dates)/2
 		if self.orientation:
 			rowscols=(6,1)
 			axpad=0.1
 		else:
-			rowscols=(3,2)
+			rowscols=(nrows,2)
 			axpad=0
 		grid = ImageGrid( fig,111,
 								nrows_ncols = rowscols,
@@ -72,7 +73,7 @@ class create(object):
 		clevels = kwargs['clevels']
 		cmap = kwargs['cmap']
 
-		for i in range(6):
+		for i in range(len(self.dates)):
 			SPD = np.sqrt(u_arrays[i]**2+v_arrays[i]**2)
 			cs = self.axes[i].contourf(X,Y,SPD,clevels,cmap=cmap)
 			set_limits(self,i)
@@ -88,7 +89,7 @@ class create(object):
 		t_arrays=read_files(self,'temperature')
 		X,Y = np.meshgrid(self.lats,self.lons)
 		cmap = kwargs['cmap']
-		for i in range(6):
+		for i in range(len(self.dates)):
 			extent=[min(self.lons),max(self.lons),
 					min(self.lats),max(self.lats)]
 			im = self.axes[i].imshow(t_arrays[i],
@@ -111,10 +112,13 @@ class create(object):
 		q_arrays=read_files(self,'sphum') # [kg/kg]
 		X,Y = np.meshgrid(self.lons,self.lats)
 		clevels = kwargs['clevels']
-		for i in range(6):
+		self.series['theta']=[]		
+		for i in range(len(self.dates)):
 			mixr = thermo.mixing_ratio(specific_humidity= q_arrays[i])
 			press = np.zeros(mixr.shape)+kwargs['level'] #[hPa]
 			theta = thermo.theta2(C=t_arrays[i],hPa=press,mixing_ratio=mixr)
+			val=get_value_at(-123.,38.5,theta,self) # closest to BBY
+			self.series['theta'].append(val) 
 			cf = self.axes[i].contourf(X,Y,theta, clevels, cmap=cmap)
 			self.axes[i].cax.colorbar(cf,ticks=clevels[::4])
 			set_limits(self,i)
@@ -132,10 +136,13 @@ class create(object):
 		rh_arrays=read_files(self,'relhumid')
 		press = np.zeros(rh_arrays[0].shape)+kwargs['level'] #[hPa]
 		X,Y = np.meshgrid(self.lons,self.lats)
-		for i in range(6):
+		self.series['thetaeq']=[]
+		for i in range(len(self.dates)):
 			mixr = thermo.mixing_ratio(specific_humidity= q_arrays[i])
 			theta = thermo.theta_equiv2(C=t_arrays[i],hPa=press,
 										mixing_ratio=mixr,relh=rh_arrays[i])
+			val=get_value_at(-123.,38.5,theta,self) # closest to BBY
+			self.series['thetaeq'].append(val) 
 			cf = self.axes[i].contourf(X,Y,theta, clevels, cmap=cmap)
 			self.axes[i].cax.colorbar(cf,ticks=clevels[::4])
 			set_limits(self,i)
@@ -149,7 +156,7 @@ class create(object):
 		rh_arrays=read_files(self,'relhumid')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		clevels = kwargs['clevels']
-		for i in range(6):
+		for i in range(len(self.dates)):
 			cf = self.axes[i].contourf(X,Y,rh_arrays[i], clevels, cmap=cmap)
 			self.axes[i].cax.colorbar(cf,ticks=clevels)
 			set_limits(self,i)
@@ -164,7 +171,7 @@ class create(object):
 		vort_arrays=read_files(self,'absvort')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		clevels = kwargs['clevels']
-		for i in range(6):
+		for i in range(len(self.dates)):
 			cs = self.axes[i].contourf(X,Y,vort_arrays[i],clevels,cmap=cmap)
 			self.axes[i].cax.colorbar(cs,ticks=clevels)
 			set_limits(self,i)
@@ -180,11 +187,17 @@ class create(object):
 		mslp_arrays=read_files(self,'mslp')
 		X,Y = np.meshgrid(self.lons,self.lats)
 		clevels = kwargs['clevels']
-		for i in range(6):
+		self.series['surfpressure']=[]
+		for i in range(len(self.dates)):
 			# cs = self.axes[i].contourf(X,Y,mslp_arrays[i],clevels,cmap=cmap)
 			cs = self.axes[i].contour(X,Y,mslp_arrays[i]/100.,clevels,colors='grey')
 			# self.axes[i].cax.colorbar(cs,ticks=clevels)
-			self.axes[i].clabel(cs,clevels[::2],fontsize=12,	fmt='%1.0f')
+			val=get_value_at(-123.,38.5,mslp_arrays[i]/100.,self) # closest to BBY
+			self.series['surfpressure'].append(val) 
+			clabels=self.axes[i].clabel(cs,clevels[::2],
+										fontsize=10,
+										fmt='%1.0f')
+			[txt.set_color('black') for txt in clabels]
 			set_limits(self,i)
 			# self.add_date(i)
 
@@ -202,7 +215,7 @@ class create(object):
 		except KeyError:
 			clevels=None
 		cmap = kwargs['cmap']		
-		for i in range(6):
+		for i in range(len(self.dates)):
 			thickness=lv1_arrays[i]-lv2_arrays[i]
 			if clevels:
 				cs = self.axes[i].contourf(X,Y,thickness,clevels,cmap=cmap)
@@ -228,13 +241,21 @@ class create(object):
 		key = kwargs['key']
 		colorkey = kwargs['colorkey']
 		scale = kwargs['scale']
-		for i in range(6):
+		self.series['u']=[]
+		self.series['v']=[]
+
+		for i in range(len(self.dates)):
 			u = u_arrays[i]
 			v = v_arrays[i]
-			u = u[::jump,::jump]
-			v = v[::jump,::jump]
-			x = X[::jump,::jump]
-			y = Y[::jump,::jump]
+			vu=get_value_at(-123.,38.5,u,self) # closest to BBY
+			vv=get_value_at(-123.,38.5,v,self) # closest to BBY		
+			self.series['u'].append(vu)		
+			self.series['v'].append(vv)	
+			start=1
+			u = u[start::jump,start::jump]
+			v = v[start::jump,start::jump]
+			x = X[start::jump,start::jump]
+			y = Y[start::jump,start::jump]
 			Q = self.axes[i].quiver(x, y, u, v, 
 									units='dots',
 									scale_units='dots',
@@ -259,7 +280,7 @@ class create(object):
 			clevels=None
 		geop_arrays=read_files(self,'geop')
 		X,Y = np.meshgrid(self.lons,self.lats)
-		for i in range(6):
+		for i in range(len(self.dates)):
 			hgt=geop_arrays[i]/10 #[dm]
 			if clevels:
 				cs = self.axes[i].contour(X,Y,hgt,clevels,colors='k',linewidths=2.0)			
@@ -279,7 +300,7 @@ class create(object):
 		ylinec = coastline[0][1] 
 		xlinec2 = coastline[1][0] 
 		ylinec2 = coastline[1][1] 
-		for i in range(6):
+		for i in range(len(self.dates)):
 			self.axes[i].plot(xlinec, ylinec,color = 'k',linewidth = 1,	linestyle = '-')
 			self.axes[i].plot(xlinec2, ylinec2,color = 'k',linewidth = 1,	linestyle = '-') #Vancouver Island
 			
@@ -307,7 +328,7 @@ class create(object):
 		if locname == 'bby':
 			label='BBY'
 
-		for i in range(6):
+		for i in range(len(self.dates)):
 			self.axes[i].plot(-123.09,38.30,'o',markersize=8,color='b')
 			if i == 0:
 				self.axes[i].annotate(label,xy=(-123.09,38.30),
@@ -485,6 +506,12 @@ class create(object):
 *********************************************
 '''
 
+def get_value_at(lon,lat,array,self):
+	ix=np.where(self.lons==lon)
+	iy=np.where(self.lats==lat)
+	val=array[iy,ix]
+	return val[0][0]
+
 def read_files(self,var):
 
 	''' Retrieve arrays per dates '''
@@ -531,6 +558,7 @@ def read_files(self,var):
 def get_horizontal_field(self,date,ncvar,vindx):
 
 	cfsr_file = self.directory+self.prefix+date.strftime('%Y%m%d%H')+self.sufix
+	
 	data=Dataset(cfsr_file,'r')
 	array_out = data.variables[ncvar][:,:,:]
 	array_out=shiftgrid(array_out,axis=2)
@@ -586,6 +614,7 @@ def get_geo_index(self):
 	
 	d=self.dates[0]
 	cfsr_file = self.directory+self.prefix+d.strftime('%Y%m%d%H')+self.sufix
+	# print cfsr_file
 	data=Dataset(cfsr_file,'r')
 	nclons=data.variables['lon_0'][:] # len = 720
 	nclons=nclons-180 # [0 ...60 ...-180 ...-60 ...0] to [-180 ... -60 ... 0  ... 60 ... 180]
