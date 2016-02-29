@@ -21,22 +21,16 @@ def main():
 
 	domain=[lonleft,lonright,lattop,latbot]
 
-	# local_directory='/home/rvalenzuela/'
+	local_directory='/home/rvalenzuela/'
 	# directory='/Users/raulv/Desktop/'
-	local_directory='/home/raul/'
+	# local_directory='/home/raul/'
 
 	case = raw_input('\nIndicate case (e.g. 1): ')
 	base_directory=local_directory +'CFSR/case'+case.zfill(2)
 	print base_directory
 
+	start, end = get_times(case)
 	
-	if case=='3':
-		start=datetime(2001,1,23,0)
-		end=datetime(2001,1,24,0)
-	elif case=='7':
-		start=datetime(2001,2,17,6)
-		end=datetime(2001,2,18,0)
-
 	delta=timedelta(hours=6)
 	dates=get_dates(start,end,delta)
 	
@@ -121,6 +115,20 @@ def main():
 
 
 	cfsr.show('ipython')
+
+def get_times(case):
+
+
+	cfsr_time = {
+				'1': [datetime(1998,1,18,0), datetime(1998,1,19,6)],
+				'2': [datetime(1998,1,26,0), datetime(1998,1,27,6)],
+				'3': [datetime(2001,1,23,0), datetime(2001,1,24,0)],
+				'7':[datetime(2001,2,17,6), datetime(2001,2,18,0)]
+				}
+
+
+	return cfsr_time[case]
+
 
 def plot_cross_sections():
 
