@@ -8,7 +8,6 @@
 
 from netCDF4 import Dataset
 from mpl_toolkits.axes_grid1 import ImageGrid
-# from pylab import quiver, quiverkey
 from mpl_toolkits.basemap import Basemap
 
 import matplotlib.pyplot as plt
@@ -26,7 +25,8 @@ class create(object):
         self.domain = kwargs['domain']
         self.dates = kwargs['dates']
         self.directory = kwargs['directory']
-        self.level = []
+        self.level = None
+        self.vertlevels = None
         self.axes = []
         self.prefix = '/pgbhnl.gdas.'
         self.sufix = '.nc'
@@ -157,9 +157,9 @@ class create(object):
         self.initialize_plot()
         self.level = kwargs['level']*100
         cmap = kwargs['cmap']
+        clevels = kwargs['clevels']
         rh_arrays = read_files(self, 'relhumid')
         X, Y = np.meshgrid(self.lons, self.lats)
-        clevels = kwargs['clevels']
         for i in range(len(self.dates)):
             cf = self.axes[i].contourf(X, Y, rh_arrays[i], clevels, cmap=cmap)
             self.axes[i].cax.colorbar(cf, ticks=clevels)
@@ -168,6 +168,44 @@ class create(object):
 
         self.l1 = 'CFSR Relative Humidity [%] at ' + \
             str(self.level/100) + ' hPa'
+
+    def iwv_flux(self, **kwargs):
+        ''' Integrated water vapor flux (Smith et al 2010)
+        '''
+        self.initialize_plot()
+        cmap = kwargs['cmap']
+        clevels = kwargs['clevels']
+
+        ' lists of 3D arrays'
+        q_arrays = read_files(self, 'sphum')  # [kg/kg]
+        u_arrays = read_files(self, 'u')
+        v_arrays = read_files(self, 'v')
+        X, Y = np.meshgrid(self.lons, self.lats)
+        press = self.vertlevels
+        dP = np.expand_dims(np.diff(press), axis=1)
+        g = 9.8  # [m/s2]
+        for i in range(len(self.dates)):
+            q = q_arrays[i]
+            u = u_arrays[i]
+            v = v_arrays[i]
+            ' layer averages '
+            ql = (q[:-1, :, :] + q[1:, :, :]) / 2.
+            ul = (u[:-1, :, :] + u[1:, :, :]) / 2.
+            vl = (v[:-1, :, :] + v[1:, :, :]) / 2.
+            ' flux per component per layer'
+            u_iwvf = (1/g)*ql*ul*dP[:, None]
+            v_iwvf = (1/g)*ql*vl*dP[:, None]
+            ' total flux per layer'
+            wvf = np.sqrt(np.power(u_iwvf, 2) + np.power(v_iwvf, 2))
+            ' integrated flux'
+            iwvf = np.squeeze(np.sum(wvf, axis=0))
+
+            cf = self.axes[i].contourf(X, Y, iwvf, clevels, cmap=cmap)
+            self.axes[i].cax.colorbar(cf, ticks=clevels)
+            # set_limits(self, i)
+            self.add_date(i)
+
+        self.l1 = 'CFSR Integrated water vapor flux '
 
     def absvort(self, **kwargs):
         self.initialize_plot()
@@ -188,18 +226,15 @@ class create(object):
 
     def surfpressure(self, **kwargs):
         # self.initialize_plot()
-        # self.level = kwargs['level']*100
-        # cmap = kwargs['cmap']
+        self.level = None
         mslp_arrays = read_files(self, 'mslp')
         X, Y = np.meshgrid(self.lons, self.lats)
         clevels = kwargs['clevels']
         self.series['surfpressure'] = []
         for i in range(len(self.dates)):
-            # cs = self.axes[i].contourf(X,Y,mslp_arrays[i],clevels,cmap=cmap)
             cs = self.axes[i].contour(
                 X, Y, mslp_arrays[i]/100., clevels, colors='grey')
-            # self.axes[i].cax.colorbar(cs,ticks=clevels)
-            # closest to BBY
+            ' closest to BBY '
             val = get_value_at(-123., 38.5, mslp_arrays[i]/100., self)
             self.series['surfpressure'].append(val)
             clabels = self.axes[i].clabel(cs, clevels[::2],
@@ -207,7 +242,6 @@ class create(object):
                                           fmt='%1.0f')
             [txt.set_color('black') for txt in clabels]
             set_limits(self, i)
-            # self.add_date(i)
 
         self.l3 = '\nMean sea level pressure [hPa]'
 
@@ -237,7 +271,6 @@ class create(object):
         self.l1 = 'CFSR ' + \
             str(kwargs['top']) + ' - ' + str(kwargs['bottom']) + \
             ' hPa' + ' Geopotential Thickness [m]'
-        # self.l2='\nbetween '+ str(kwargs['top']) + ' and '+ str(kwargs['bottom']) + ' hPa'
 
     def windvector(self, **kwargs):
         if 'level' in kwargs:
@@ -315,21 +348,21 @@ class create(object):
         ylinec2 = coastline[1][1]
         for i in range(len(self.dates)):
             self.axes[i].plot(
-                xlinec, ylinec, color='k', linewidth=1,	linestyle='-')
+                xlinec, ylinec, color='k', linewidth=1, linestyle='-')
             # Vancouver Island
             self.axes[i].plot(
-                xlinec2, ylinec2, color='k', linewidth=1,	linestyle='-')
+                xlinec2, ylinec2, color='k', linewidth=1,   linestyle='-')
 
-            ''' I had to comment line 1905 and 1949 in basemap/_init_.py so
-			tickmarks show up when using these methods'''
+            ''' I had to comment line 1905 and 1949 in
+            basemap/_init_.py so tickmarks show
+            up when using these methods'''
             M.drawcountries(ax=self.axes[i])
             M.drawstates(ax=self.axes[i])
 
     def add_title(self):
-        plt.suptitle(	self.l1 + self.l2 + self.l3)
+        plt.suptitle(self.l1 + self.l2 + self.l3)
 
     def add_date(self, i):
-        # for i in range(6):
         date = self.dates[i]
         date = date.strftime('%Y%m%d %H')+' UTC'
         self.axes[i].text(0.1, 0.05, date,
@@ -394,8 +427,9 @@ class create(object):
         if field == 'thetaeq':
             for i in range(6):
                 mixr = thermo.mixing_ratio(specific_humidity=q_arrays[i])
-                theta = thermo.theta_equiv2(C=t_arrays[i], hPa=press,
-                                            mixing_ratio=mixr, relh=rh_arrays[i])
+                theta = thermo.theta_equiv2(
+                    C=t_arrays[i], hPa=press,
+                    mixing_ratio=mixr, relh=rh_arrays[i])
                 theta[theta > 320] = np.nan
                 plot_field.append(theta)
             plot_fieldc = plot_field
@@ -429,8 +463,9 @@ class create(object):
         elif field == 'thetaeq+U':
             for i in range(6):
                 mixr = thermo.mixing_ratio(specific_humidity=q_arrays[i])
-                theta = thermo.theta_equiv2(C=t_arrays[i], hPa=press,
-                                            mixing_ratio=mixr, relh=rh_arrays[i])
+                theta = thermo.theta_equiv2(
+                    C=t_arrays[i], hPa=press,
+                    mixing_ratio=mixr, relh=rh_arrays[i])
                 theta[theta > 320] = np.nan
                 plot_field.append(theta)
             plot_fieldc = read_files(self, 'u')
@@ -442,8 +477,9 @@ class create(object):
         elif field == 'thetaeq+V':
             for i in range(6):
                 mixr = thermo.mixing_ratio(specific_humidity=q_arrays[i])
-                theta = thermo.theta_equiv2(C=t_arrays[i], hPa=press,
-                                            mixing_ratio=mixr, relh=rh_arrays[i])
+                theta = thermo.theta_equiv2(
+                    C=t_arrays[i], hPa=press,
+                    mixing_ratio=mixr, relh=rh_arrays[i])
                 theta[theta > 320] = np.nan
                 plot_field.append(theta)
             plot_fieldc = read_files(self, 'v')
@@ -460,8 +496,10 @@ class create(object):
                                      vmax=vmax,
                                      cmap=cmap,
                                      norm=norm)
-            self.axes[i].cax.colorbar(im, cmap=cmap, norm=norm,
-                                      boundaries=cboundaries, ticks=cticks[::4])
+            self.axes[i].cax.colorbar(im,
+                                      cmap=cmap, norm=norm,
+                                      boundaries=cboundaries,
+                                      ticks=cticks[::4])
             xticks = self.lons[::10]
             xticklabs = [str(x) for x in xticks]
             xticklabs.reverse()
@@ -480,7 +518,8 @@ class create(object):
 
             ''' add contour lines '''
             cs = self.axes[i].contour(X, Y, plot_fieldc[i],
-                                      origin='lower', levels=boundsc, colors='k', linewidths=0.5)
+                                      origin='lower', levels=boundsc,
+                                      colors='k', linewidths=0.5)
             if field in ['thetaeq+U', 'thetaeq+V']:
                 self.axes[i].clabel(cs, boundsc,
                                     fmt='%1.0f',
@@ -513,7 +552,7 @@ class create(object):
             plt.show(block=False)
 
 
-'''			LOCAL FUNCTIONS
+'''         LOCAL FUNCTIONS
 *********************************************
 '''
 
@@ -548,14 +587,22 @@ def read_files(self, var):
     gindx = get_geo_index(self)  # horizontal index
     array = []
     for d in self.dates:
-        if self.horizontal and var != 'mslp':
+        if self.horizontal and self.level is None:
+            if var == 'mslp':
+                ' return single 2D array'
+                data = get_horizontal_field2(self, d, ncvar, axis=1)
+                data = data[gindx[2]:gindx[3], gindx[0]:gindx[1]]
+            else:
+                ' returns 3D array '
+                data = get_horizontal_field2(self, d, ncvar, axis=2)
+                data = data[:, gindx[2]:gindx[3], gindx[0]:gindx[1]]
+        elif self.horizontal:
+            ' return 2D array at specified isobaric level '
             vindx = get_vertical_index(self)  # vertical index
             data = get_horizontal_field(self, d, ncvar, vindx)
             data = data[gindx[2]:gindx[3], gindx[0]:gindx[1]]
-        elif self.horizontal and var == 'mslp':
-            data = get_horizontal_field2(self, d, ncvar)
-            data = data[gindx[2]:gindx[3], gindx[0]:gindx[1]]
         else:
+            'return 2D array (vertical section)'
             data = get_vertical_field(self, d, ncvar, gindx)
 
         if var == 'temperature':
@@ -580,12 +627,15 @@ def get_horizontal_field(self, date, ncvar, vindx):
     return array_out
 
 
-def get_horizontal_field2(self, date, ncvar):
+def get_horizontal_field2(self, date, ncvar, axis=None):
 
     cfsr_file = self.directory+self.prefix+date.strftime('%Y%m%d%H')+self.sufix
     data = Dataset(cfsr_file, 'r')
     array_out = data.variables[ncvar][:, :]
-    array_out = shiftgrid(array_out, axis=1)
+    array_out = shiftgrid(array_out, axis=axis)
+    if self.vertlevels is None:
+        self.vertlevels = data.variables['lv_ISBL0'][:]
+
     data.close()
 
     return array_out
@@ -660,8 +710,10 @@ def get_geo_index(self):
 def get_vertical_index(self):
 
     ncisob = get_vertical_array(self)
-    indx = np.argmin(np.abs(ncisob - self.level))
-
+    if self.level is not None:
+        indx = np.argmin(np.abs(ncisob - self.level))
+    else:
+        indx = []
     return indx
 
 
@@ -676,13 +728,11 @@ def get_vertical_array(self):
     return ncisob
 
 
-def shiftgrid(array, **kwargs):
+def shiftgrid(array, axis=None):
     """
     shift grid so it goes from -180 to 180 (instead of 0 to 360
     in longitude)
     """
-
-    axis = kwargs['axis']
     parts = np.split(array, 2, axis=axis)  # 3D meridional incision
     array_arranged = np.concatenate((parts[1], parts[0]), axis=axis)
 
