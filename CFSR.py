@@ -9,25 +9,30 @@
 from netCDF4 import Dataset
 from mpl_toolkits.axes_grid1 import ImageGrid
 from mpl_toolkits.basemap import Basemap
-
+from rv_utilities import add_colorbar
 import matplotlib.pyplot as plt
 import numpy as np
 import Thermodyn as thermo
 from matplotlib import colors
 
+# import itertools as itools
 import seaborn as sns
 sns.set_style("ticks")
 
 
 class create(object):
 
-    def __init__(self, **kwargs):
-        self.domain = kwargs['domain']
-        self.dates = kwargs['dates']
-        self.directory = kwargs['directory']
+    def __init__(self, ax=None, files=None,
+                 domain=None, dates=None,
+                 directory=None, zboundary=None):
+        self.domain = domain
+        self.dates = dates
+        self.directory = directory
+        self.file_list = files
+        self.files = None
         self.level = None
         self.vertlevels = None
-        self.axes = []
+        self.axes = ax
         self.prefix = '/pgbhnl.gdas.'
         self.sufix = '.nc'
         self.lats = None
@@ -39,31 +44,30 @@ class create(object):
         self.horizontal = True
         self.orientation = None
         self.hboundary = None
-        self.zboundary = kwargs['zboundary']
+        self.zboundary = zboundary
 
     def initialize_plot(self):
-        fig = plt.figure(figsize=(8.5, 11))
-        nrows = len(self.dates)/2
-        if self.orientation:
-            rowscols = (6, 1)
-            axpad = 0.1
-        else:
-            rowscols = (nrows, 2)
-            axpad = 0
-        grid = ImageGrid(fig, 111,
-                         nrows_ncols=rowscols,
-                         axes_pad=axpad,
-                         add_all=True,
-                         share_all=False,
-                         label_mode="L",
-                         cbar_location="top",
-                         cbar_mode="single",
-                         cbar_size='5%',
-                         aspect=True)
-        # grid = plt.subplots(3,2,sharex=True,sharey=True)
-        # fig.tight_layout()
-        self.l3 = ''
-        self.axes = grid
+        if self.axes is None:
+            fig = plt.figure(figsize=(8.5, 11))
+            nrows = len(self.dates)/2
+            if self.orientation:
+                rowscols = (6, 1)
+                axpad = 0.1
+            else:
+                rowscols = (nrows, 2)
+                axpad = 0
+            grid = ImageGrid(fig, 111,
+                             nrows_ncols=rowscols,
+                             axes_pad=axpad,
+                             add_all=True,
+                             share_all=False,
+                             label_mode="L",
+                             cbar_location="top",
+                             cbar_mode="single",
+                             cbar_size='5%',
+                             aspect=True)
+            self.l3 = ''
+            self.axes = grid
 
     def isotac(self, **kwargs):
         self.initialize_plot()
@@ -147,7 +151,10 @@ class create(object):
             val = get_value_at(-123., 38.5, theta, self)  # closest to BBY
             self.series['thetaeq'].append(val)
             cf = self.axes[i].contourf(X, Y, theta, clevels, cmap=cmap)
-            self.axes[i].cax.colorbar(cf, ticks=clevels[::4])
+            try:
+                self.axes[i].cax.colorbar(cf, ticks=clevels[::4])
+            except AttributeError:
+                add_colorbar(self.axes[i], cf)
             set_limits(self, i)
             self.add_date(i)
         self.l1 = 'CFSR Equivalent Potential Temperature [K] at ' + str(
@@ -175,6 +182,11 @@ class create(object):
         self.initialize_plot()
         cmap = kwargs['cmap']
         clevels = kwargs['clevels']
+        jump = kwargs['jump']
+        width = kwargs['width']
+        scale = kwargs['scale']
+        key = kwargs['key']
+        colorkey = kwargs['colorkey']
 
         ' lists of 3D arrays'
         q_arrays = read_files(self, 'sphum')  # [kg/kg]
@@ -195,17 +207,39 @@ class create(object):
             ' flux per component per layer'
             u_iwvf = (1/g)*ql*ul*dP[:, None]
             v_iwvf = (1/g)*ql*vl*dP[:, None]
+            uwvf = np.squeeze(np.sum(u_iwvf, axis=0))
+            vwvf = np.squeeze(np.sum(v_iwvf, axis=0))
             ' total flux per layer'
             wvf = np.sqrt(np.power(u_iwvf, 2) + np.power(v_iwvf, 2))
             ' integrated flux'
             iwvf = np.squeeze(np.sum(wvf, axis=0))
-
             cf = self.axes[i].contourf(X, Y, iwvf, clevels, cmap=cmap)
             self.axes[i].cax.colorbar(cf, ticks=clevels)
-            # set_limits(self, i)
+            ' vectors '
+            u = uwvf[iwvf >= clevels[0]][::jump]
+            v = vwvf[iwvf >= clevels[0]][::jump]
+            x = X[iwvf >= clevels[0]][::jump]
+            y = Y[iwvf >= clevels[0]][::jump]
+
+            Q = self.axes[i].quiver(x, y, u, v, units='dots',
+                                    scale_units='dots',
+                                    scale=scale,
+                                    width=width,
+                                    zorder=9)
+            if i == 0:
+                keylab = str(key)
+                self.axes[i].quiverkey(Q, 0.9, 0.05, key, keylab,
+                                       labelpos='N',
+                                       coordinates='axes',
+                                                fontproperties={
+                                                    'weight': 'bold',
+                                                    'size': 12},
+                                       color=colorkey,
+                                       labelcolor=colorkey)
+
             self.add_date(i)
 
-        self.l1 = 'CFSR Integrated water vapor flux '
+        self.l1 = 'CFSR Integrated water vapor flux [kg m-1 s-1] '
 
     def absvort(self, **kwargs):
         self.initialize_plot()
@@ -586,6 +620,7 @@ def read_files(self, var):
 
     gindx = get_geo_index(self)  # horizontal index
     array = []
+    self.files = iter(self.file_list)
     for d in self.dates:
         if self.horizontal and self.level is None:
             if var == 'mslp':
@@ -598,8 +633,7 @@ def read_files(self, var):
                 data = data[:, gindx[2]:gindx[3], gindx[0]:gindx[1]]
         elif self.horizontal:
             ' return 2D array at specified isobaric level '
-            vindx = get_vertical_index(self)  # vertical index
-            data = get_horizontal_field(self, d, ncvar, vindx)
+            data = get_horizontal_field(self, d, ncvar)
             data = data[gindx[2]:gindx[3], gindx[0]:gindx[1]]
         else:
             'return 2D array (vertical section)'
@@ -614,10 +648,10 @@ def read_files(self, var):
     return array
 
 
-def get_horizontal_field(self, date, ncvar, vindx):
+def get_horizontal_field(self, date, ncvar):
 
-    cfsr_file = self.directory+self.prefix+date.strftime('%Y%m%d%H')+self.sufix
-
+    cfsr_file = get_filename(self, date=date)
+    vindx = get_vertical_index(self, cfsr_file)  # vertical index
     data = Dataset(cfsr_file, 'r')
     array_out = data.variables[ncvar][:, :, :]
     array_out = shiftgrid(array_out, axis=2)
@@ -629,16 +663,26 @@ def get_horizontal_field(self, date, ncvar, vindx):
 
 def get_horizontal_field2(self, date, ncvar, axis=None):
 
-    cfsr_file = self.directory+self.prefix+date.strftime('%Y%m%d%H')+self.sufix
+    cfsr_file = get_filename(self, date=date)
     data = Dataset(cfsr_file, 'r')
     array_out = data.variables[ncvar][:, :]
     array_out = shiftgrid(array_out, axis=axis)
     if self.vertlevels is None:
         self.vertlevels = data.variables['lv_ISBL0'][:]
-
     data.close()
 
     return array_out
+
+
+def get_filename(self, date):
+
+    if self.files is None:
+        cfsr_file = self.directory+self.prefix +\
+            date.strftime('%Y%m%d%H')+self.sufix
+    else:
+        cfsr_file = self.files.next()
+
+    return cfsr_file
 
 
 def get_vertical_field(self, date, ncvar, gindx):
@@ -675,9 +719,10 @@ def get_vertical_field(self, date, ncvar, gindx):
 def get_geo_index(self):
 
     d = self.dates[0]
-    cfsr_file = self.directory+self.prefix+d.strftime('%Y%m%d%H')+self.sufix
-    # print cfsr_file
+    self.files = iter(self.file_list)
+    cfsr_file = get_filename(self, date=d)
     data = Dataset(cfsr_file, 'r')
+
     nclons = data.variables['lon_0'][:]  # len = 720
     # [0 ...60 ...-180 ...-60 ...0] to [-180 ... -60 ... 0  ... 60 ... 180]
     nclons = nclons-180
@@ -707,20 +752,20 @@ def get_geo_index(self):
             return [lattop, latbot, lon_section]
 
 
-def get_vertical_index(self):
+def get_vertical_index(self, cfsr_file):
 
-    ncisob = get_vertical_array(self)
-    if self.level is not None:
-        indx = np.argmin(np.abs(ncisob - self.level))
-    else:
+    ncisob = get_vertical_array(cfsr_file)
+    if self.level is None:
         indx = []
+    else:
+        indx = np.argmin(np.abs(ncisob - self.level))
     return indx
 
 
-def get_vertical_array(self):
+def get_vertical_array(cfsr_file):
 
-    d = self.dates[0]
-    cfsr_file = self.directory+self.prefix+d.strftime('%Y%m%d%H')+self.sufix
+    # d = self.dates[0]
+    # cfsr_file = get_filename(self, date=d)
     data = Dataset(cfsr_file, 'r')
     ncisob = data.variables['lv_ISBL0'][:]
     data.close()

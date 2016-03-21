@@ -6,12 +6,13 @@
 #
 
 
-from datetime import datetime, timedelta
+# from datetime import datetime, timedelta
+from glob import glob
 import os
 import CFSR
 
 
-def plot(case=None, field=None, dates=None):
+def plot(case=None, field=None, dates=None, ax=None):
 
     lonleft = -150
     lonright = -116
@@ -19,17 +20,35 @@ def plot(case=None, field=None, dates=None):
     latbot = 20
     domain = [lonleft, lonright, lattop, latbot]
 
-    str_case = str(case)
-    homedir = os.path.expanduser('~')
-    base_directory = homedir + '/CFSR/case'+str_case.zfill(2)
-    print base_directory
+    if case is None and dates is not None:
+        basedir = '/home/rvalenzuela/CFSR'
+        elem = os.listdir(basedir)
+        dirs = [e for e in elem if 'case' in e]
+        result = [glob(basedir+'/'+d+'/*nc') for d in dirs]
+        flat = [val for sublist in result for val in sublist]
+        datestr = [d.strftime('%Y%m%d%H') for d in dates]
+        file = []
+        for d in datestr:
+            file.append([s for s in flat if d in s])
+        files = [val for sublist in file for val in sublist]
+        files.sort()
+        dates.sort()
 
-    if dates is None:
-        dates = get_dates(str_case)
+        cfsr = CFSR.create(domain=domain, dates=dates,
+                           files=files, ax=ax, zboundary=600)
 
-    cfsr = CFSR.create(domain=domain, dates=dates,
-                       directory=base_directory,
-                       zboundary=600)
+    else:
+        str_case = str(case)
+        homedir = os.path.expanduser('~')
+        base_directory = homedir + '/CFSR/case'+str_case.zfill(2)
+        print base_directory
+
+        if dates is None:
+            dates = get_dates(str_case)
+
+        cfsr = CFSR.create(domain=domain, dates=dates,
+                           directory=base_directory, ax=ax,
+                           zboundary=600)
 
     if field == 'isotac':
         cfsr.isotac(level=300, clevels=range(40, 75, 5), cmap='jet')
@@ -87,8 +106,8 @@ def plot(case=None, field=None, dates=None):
         cfsr.add_location('bby')
 
     if field == 'thetaeq':
-        cfsr.thetaeq(level=1000, clevels=range(262, 328, 4), cmap='RdBu_r')
-        cfsr.windvector(level=1000, jump=2, width=0.5,
+        cfsr.thetaeq(level=1000, clevels=range(260, 350, 5), cmap='RdBu_r')
+        cfsr.windvector(level=1000, jump=3, width=0.7,
                         scale=1.5, key=20, colorkey='b')
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
@@ -96,10 +115,8 @@ def plot(case=None, field=None, dates=None):
         cfsr.add_location('bby')
 
     if field == 'iwv_flux':
-        cfsr.iwv_flux(clevels=range(300, 1300, 100), cmap='YlGn')
-
-        # cfsr.windvector(level=1000, jump=2, width=0.5,
-        #                 scale=1.5, key=20, colorkey='b')
+        cfsr.iwv_flux(clevels=range(300, 1700, 200), cmap='YlGn',
+                      jump=8, width=1.1, scale=50, key=800, colorkey='k')
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
         cfsr.add_title()
@@ -157,4 +174,3 @@ def get_dates(case):
 #     cfsr.cross_section(field='thetaeq+V', orientation=['zonal', 35.],
 #                        clevels=[range(276, 328, 2), range(-15, 20, 5)],
 #                        cmap='RdBu_r')
-
