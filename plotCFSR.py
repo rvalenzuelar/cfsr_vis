@@ -5,14 +5,13 @@
 # August, 2015
 #
 
-
-# from datetime import datetime, timedelta
 from glob import glob
 import os
 import CFSR
 
 
-def plot(case=None, field=None, dates=None, ax=None):
+def plot(case=None, field=None, dates=None, ax=None,
+         contour=None):
 
     lonleft = -150
     lonright = -116
@@ -116,11 +115,17 @@ def plot(case=None, field=None, dates=None, ax=None):
 
     if field == 'iwv_flux':
         cfsr.iwv_flux(clevels=range(300, 1700, 200), cmap='YlGn',
-                      jump=8, width=1.1, scale=50, key=800, colorkey='k')
+                      jump=8, width=1.2, scale=50, key=800, colorkey='k')
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
         cfsr.add_title()
         cfsr.add_location('bby')
+
+    if contour is not None:
+        if contour == 'thetaeq':
+            cfsr.thetaeq(filled=False, level=1000,
+                         clevels=range(308, 340, 2))
+            cfsr.add_title()
 
     cfsr.show('ipython')
 

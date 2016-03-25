@@ -40,6 +40,7 @@ class create(object):
         self.l1 = ' '
         self.l2 = ' '
         self.l3 = ' '
+        self.title = ''
         self.series = {}
         self.horizontal = True
         self.orientation = None
@@ -130,13 +131,12 @@ class create(object):
             set_limits(self, i)
             self.add_date(i)
 
-        self.l1 = 'CFSR Potential Temperature [K] at ' + \
+        self.l1 = 'Potential Temperature [K] at ' + \
             str(self.level/100) + ' hPa'
 
-    def thetaeq(self, **kwargs):
+    def thetaeq(self, filled=True, cmap=None, **kwargs):
         self.initialize_plot()
         self.level = kwargs['level']*100
-        cmap = kwargs['cmap']
         clevels = kwargs['clevels']
         t_arrays = read_files(self, 'temperature')  # [C]
         q_arrays = read_files(self, 'sphum')  # [kg/kg]
@@ -150,15 +150,25 @@ class create(object):
                                         mixing_ratio=mixr, relh=rh_arrays[i])
             val = get_value_at(-123., 38.5, theta, self)  # closest to BBY
             self.series['thetaeq'].append(val)
-            cf = self.axes[i].contourf(X, Y, theta, clevels, cmap=cmap)
-            try:
-                self.axes[i].cax.colorbar(cf, ticks=clevels[::4])
-            except AttributeError:
-                add_colorbar(self.axes[i], cf)
+            if filled:
+                cf = self.axes[i].contourf(X, Y, theta, clevels, cmap=cmap)
+                try:
+                    self.axes[i].cax.colorbar(cf, ticks=clevels[::4])
+                except AttributeError:
+                    add_colorbar(self.axes[i], cf)
+            else:
+                cs = self.axes[i].contour(X, Y, theta, clevels, colors='r',
+                                          linewidths=1)
+                clabels = self.axes[i].clabel(cs, clevels[::5],
+                                              fontweight='bold',
+                                              fontsize=10,
+                                              fmt='%1.0f')
+                [txt.set_color('r') for txt in clabels]
+
             set_limits(self, i)
             self.add_date(i)
-        self.l1 = 'CFSR Equivalent Potential Temperature [K] at ' + str(
-            self.level/100) + ' hPa'
+        txt = 'Equivalent Potential Temperature [K] at {} hPa\n'
+        self.title += txt.format(str(self.level/100))
 
     def relhumid(self, **kwargs):
         self.initialize_plot()
@@ -173,7 +183,7 @@ class create(object):
             set_limits(self, i)
             self.add_date(i)
 
-        self.l1 = 'CFSR Relative Humidity [%] at ' + \
+        self.l1 = 'Relative Humidity [%] at ' + \
             str(self.level/100) + ' hPa'
 
     def iwv_flux(self, **kwargs):
@@ -227,19 +237,19 @@ class create(object):
                                     width=width,
                                     zorder=9)
             if i == 0:
-                keylab = str(key)
-                self.axes[i].quiverkey(Q, 0.9, 0.05, key, keylab,
-                                       labelpos='N',
+                self.axes[i].quiverkey(Q, 0.85, 0.05, key, str(key),
                                        coordinates='axes',
-                                                fontproperties={
-                                                    'weight': 'bold',
-                                                    'size': 12},
-                                       color=colorkey,
-                                       labelcolor=colorkey)
+                                       fontproperties={
+                                            'weight': 'bold',
+                                            'size': 12},
+                                        color=colorkey,
+                                        labelcolor=colorkey,
+                                        labelsep=0.05)
+                # Qk.text.set_backgroundcolor('w')
 
             self.add_date(i)
 
-        self.l1 = 'CFSR Integrated water vapor flux [kg m-1 s-1] '
+        self.title += 'Integrated water vapor flux [kg m-1 s-1]\n '
 
     def absvort(self, **kwargs):
         self.initialize_plot()
@@ -277,7 +287,7 @@ class create(object):
             [txt.set_color('black') for txt in clabels]
             set_limits(self, i)
 
-        self.l3 = '\nMean sea level pressure [hPa]'
+        self.title += 'Mean sea level pressure [hPa]\n'
 
     def geothickness(self, **kwargs):
         self.initialize_plot()
@@ -394,12 +404,13 @@ class create(object):
             M.drawstates(ax=self.axes[i])
 
     def add_title(self):
-        plt.suptitle(self.l1 + self.l2 + self.l3)
+        # plt.suptitle(self.l1 + self.l2 + self.l3)
+        plt.suptitle(self.title)
 
     def add_date(self, i):
         date = self.dates[i]
-        date = date.strftime('%Y%m%d %H')+' UTC'
-        self.axes[i].text(0.1, 0.05, date,
+        date = date.strftime('%Y-%m-%d %H')+' UTC'
+        self.axes[i].text(0.03, 0.05, date,
                           horizontalalignment='left',
                           verticalalignment='bottom',
                           transform=self.axes[i].transAxes,
