@@ -11,7 +11,7 @@ import CFSR
 
 
 def plot(case=None, field=None, dates=None, ax=None,
-         contour=None):
+         contour=None, clevels=None):
 
     lonleft = -150
     lonright = -116
@@ -49,7 +49,7 @@ def plot(case=None, field=None, dates=None, ax=None,
                            directory=base_directory, ax=ax,
                            zboundary=600)
 
-    if field == 'isotac':
+    if field[0] == 'isotac':
         cfsr.isotac(level=300, clevels=range(40, 75, 5), cmap='jet')
         cfsr.windvector(level=300, jump=5, width=1.0,
                         scale=2.0, key=40, colorkey='r')
@@ -58,7 +58,7 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_title()
         cfsr.add_location('bby')
 
-    if field == 'absvort':
+    if field[0] == 'absvort':
         cfsr.absvort(level=500, clevels=range(1, 6, 1), cmap='YlOrBr')
         cfsr.windvector(level=500, jump=5, width=1.0,
                         scale=2.0, key=40, colorkey='r')
@@ -67,7 +67,7 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_title()
         cfsr.add_location('bby')
 
-    if field == 'relhumid':
+    if field[0] == 'relhumid':
         cfsr.relhumid(level=700, clevels=range(90, 102, 2), cmap='YlGn')
         cfsr.windvector(level=700, jump=5, width=1.5,
                         scale=1.0, key=20, colorkey='r')
@@ -76,7 +76,7 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_title()
         cfsr.add_location('bby')
 
-    if field == 'temperature':
+    if field[0] == 'temperature':
         cfsr.temperature(level=1000, vmin=0, vmax=20, cmap='jet')
         cfsr.windvector(jump=5, width=1.5,
                         scale=1.0, key=20, colorkey='white')
@@ -85,7 +85,7 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_title()
         cfsr.add_location('bby')
 
-    if field == 'geothick':
+    if field[0] == 'geothick':
         cfsr.geothickness(top=500, bottom=1000,
                           clevels=range(5100, 5730, 30), cmap='RdBu_r')
         cfsr.windvector(level=1000, jump=4, width=0.5,
@@ -95,7 +95,7 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_title()
         cfsr.add_location('bby')
 
-    if field == 'theta':
+    if field[0] == 'theta':
         cfsr.theta(level=1000, clevels=range(270, 298, 2), cmap='RdBu_r')
         cfsr.windvector(level=1000, jump=2, width=0.5,
                         scale=1.5, key=20, colorkey='b')
@@ -104,7 +104,7 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_title()
         cfsr.add_location('bby')
 
-    if field == 'thetaeq':
+    if field[0] == 'thetaeq':
         cfsr.thetaeq(level=1000, clevels=range(260, 350, 5), cmap='RdBu_r')
         cfsr.windvector(level=1000, jump=3, width=0.7,
                         scale=1.5, key=20, colorkey='b')
@@ -113,8 +113,12 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_title()
         cfsr.add_location('bby')
 
-    if field == 'iwv_flux':
-        cfsr.iwv_flux(clevels=range(300, 1700, 200), cmap='YlGn',
+    if field[0] == 'iwv_flux':
+        if field[1] is not None:
+            clev = field[1]
+        else:
+            clev = range(300, 1700, 200)
+        cfsr.iwv_flux(clevels=clev, cmap='YlGn',
                       jump=8, width=1.2, scale=50, key=800, colorkey='k')
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
@@ -122,9 +126,13 @@ def plot(case=None, field=None, dates=None, ax=None,
         cfsr.add_location('bby')
 
     if contour is not None:
-        if contour == 'thetaeq':
+        if contour[0] == 'thetaeq':
+            if contour[1] is not None:
+                clev = contour[1]
+            else:
+                clev = range(308, 340, 2)
             cfsr.thetaeq(filled=False, level=1000,
-                         clevels=range(308, 340, 2))
+                         clevels=clev)
             cfsr.add_title()
 
     cfsr.show('ipython')
