@@ -631,7 +631,8 @@ def read_files(self, var):
 
     gindx = get_geo_index(self)  # horizontal index
     array = []
-    self.files = iter(self.file_list)
+    if self.file_list is not None:
+        self.files = iter(self.file_list)
     for d in self.dates:
         if self.horizontal and self.level is None:
             if var == 'mslp':
@@ -730,7 +731,8 @@ def get_vertical_field(self, date, ncvar, gindx):
 def get_geo_index(self):
 
     d = self.dates[0]
-    self.files = iter(self.file_list)
+    if self.file_list is not None:
+        self.files = iter(self.file_list)
     cfsr_file = get_filename(self, date=d)
     data = Dataset(cfsr_file, 'r')
 
