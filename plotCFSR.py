@@ -11,7 +11,7 @@ import CFSR
 
 
 def plot(case=None, field=None, dates=None, ax=None,
-         contour=None, clevels=None):
+         contour=None, clevels=None, basedir=None, homedir=None):
 
     lonleft = -150
     lonright = -116
@@ -20,7 +20,9 @@ def plot(case=None, field=None, dates=None, ax=None,
     domain = [lonleft, lonright, lattop, latbot]
 
     if case is None and dates is not None:
-        basedir = '/home/rvalenzuela/CFSR'
+        if homedir is None:
+            homedir = os.path.expanduser('~')
+        basedir = homedir+'/CFSR'
         elem = os.listdir(basedir)
         dirs = [e for e in elem if 'case' in e]
         result = [glob(basedir+'/'+d+'/*nc') for d in dirs]
@@ -38,7 +40,8 @@ def plot(case=None, field=None, dates=None, ax=None,
 
     else:
         str_case = str(case)
-        homedir = os.path.expanduser('~')
+        if homedir is None:
+            homedir = os.path.expanduser('~')
         base_directory = homedir + '/CFSR/case'+str_case.zfill(2)
         print base_directory
 
@@ -49,6 +52,7 @@ def plot(case=None, field=None, dates=None, ax=None,
                            directory=base_directory, ax=ax,
                            zboundary=600)
 
+    
     if field[0] == 'isotac':
         cfsr.isotac(level=300, clevels=range(40, 75, 5), cmap='jet')
         cfsr.windvector(level=300, jump=5, width=1.0,

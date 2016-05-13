@@ -50,5 +50,8 @@ grid = ImageGrid(fig, 111,
                  cbar_mode="single",
                  cbar_size='2%',
                  aspect=True)
-cfsr.plot(field='iwv_flux', dates=dates, ax=grid,
-          contour='thetaeq')
+cfsr.plot(field=['iwv_flux',None], dates=dates, ax=grid,
+          contour=['thetaeq',None],homedir='/media/raul/RauLdisk')
+
+
+
