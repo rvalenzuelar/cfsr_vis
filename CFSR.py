@@ -158,7 +158,7 @@ class create(object):
                     add_colorbar(self.axes[i], cf)
             else:
                 cs = self.axes[i].contour(X, Y, theta, clevels, colors='r',
-                                          linewidths=1)
+                                          linewidths=0.6)
                 clabels = self.axes[i].clabel(cs, clevels[::5],
                                               fontweight='bold',
                                               fontsize=10,

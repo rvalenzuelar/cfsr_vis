@@ -44,14 +44,16 @@ grid = ImageGrid(fig, 111,
                  nrows_ncols=(3, 3),
                  axes_pad=0,
                  add_all=True,
-                 share_all=False,
+                 share_all=True,
                  label_mode="L",
                  cbar_location="top",
                  cbar_mode="single",
                  cbar_size='2%',
                  aspect=True)
+# homedir = '/media/raul/RauLdisk'
+homedir = '/Volumes/RauLdisk'
 cfsr.plot(field=['iwv_flux',None], dates=dates, ax=grid,
-          contour=['thetaeq',None],homedir='/media/raul/RauLdisk')
+          contour=['thetaeq',None],homedir=homedir)
 
 
 
