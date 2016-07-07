@@ -6,17 +6,20 @@
 #
 
 
+
+import matplotlib.pyplot as plt
+import numpy as np
+import Thermodyn as thermo
+import seaborn as sns
+from matplotlib import colors
 from netCDF4 import Dataset
 from mpl_toolkits.axes_grid1 import ImageGrid
 from mpl_toolkits.basemap import Basemap
 from rv_utilities import add_colorbar
-import matplotlib.pyplot as plt
-import numpy as np
-import Thermodyn as thermo
-from matplotlib import colors
+from string import ascii_lowercase
 
+letter=list(ascii_lowercase)
 # import itertools as itools
-import seaborn as sns
 sns.set_style("ticks")
 
 
@@ -192,11 +195,7 @@ class create(object):
         self.initialize_plot()
         cmap = kwargs['cmap']
         clevels = kwargs['clevels']
-        jump = kwargs['jump']
-        width = kwargs['width']
-        scale = kwargs['scale']
-        key = kwargs['key']
-        colorkey = kwargs['colorkey']
+        vectors = kwargs['vectors']
 
         ' lists of 3D arrays'
         q_arrays = read_files(self, 'sphum')  # [kg/kg]
@@ -225,31 +224,40 @@ class create(object):
             iwvf = np.squeeze(np.sum(wvf, axis=0))
             cf = self.axes[i].contourf(X, Y, iwvf, clevels, cmap=cmap)
             self.axes[i].cax.colorbar(cf, ticks=clevels)
-            ' vectors '
-            u = uwvf[iwvf >= clevels[0]][::jump]
-            v = vwvf[iwvf >= clevels[0]][::jump]
-            x = X[iwvf >= clevels[0]][::jump]
-            y = Y[iwvf >= clevels[0]][::jump]
-
-            Q = self.axes[i].quiver(x, y, u, v, units='dots',
-                                    scale_units='dots',
-                                    scale=scale,
-                                    width=width,
-                                    zorder=9)
-            if i == 0:
-                self.axes[i].quiverkey(Q, 0.85, 0.05, key, str(key),
-                                       coordinates='axes',
-                                       fontproperties={
-                                            'weight': 'bold',
-                                            'size': 12},
-                                        color=colorkey,
-                                        labelcolor=colorkey,
-                                        labelsep=0.05)
-                # Qk.text.set_backgroundcolor('w')
-
+            
+            if vectors is not None:
+                jump = vectors['jump']
+                width = vectors['width']
+                scale = vectors['scale']
+                key = vectors['key']
+                colorkey = vectors['colorkey']
+                u = uwvf[iwvf >= clevels[0]][::jump]
+                v = vwvf[iwvf >= clevels[0]][::jump]
+                x = X[iwvf >= clevels[0]][::jump]
+                y = Y[iwvf >= clevels[0]][::jump]
+    
+                Q = self.axes[i].quiver(x, y, u, v, units='dots',
+                                        scale_units='dots',
+                                        scale=scale,
+                                        width=width,
+                                        zorder=9)
+                if i == 0:
+                    self.axes[i].quiverkey(Q, 0.85, 0.05, key, str(key),
+                                           coordinates='axes',
+                                           fontproperties={
+                                                'weight': 'bold',
+                                                'size': 12},
+                                            color=colorkey,
+                                            labelcolor=colorkey,
+                                            labelsep=0.05)
+                    # Qk.text.set_backgroundcolor('w')
+            txt='({})'.format(letter[i])
+            self.axes[i].text(0.05,0.9,txt,size=12,weight='bold',
+                              backgroundcolor='w', zorder=100000,
+                              transform=self.axes[i].transAxes)
             self.add_date(i)
 
-        self.title += 'Integrated water vapor flux [kg m-1 s-1]\n '
+        self.title += 'Integrated water vapor transport [kg m-1 s-1]\n '
 
     def absvort(self, **kwargs):
         self.initialize_plot()
@@ -409,7 +417,7 @@ class create(object):
 
     def add_date(self, i):
         date = self.dates[i]
-        date = date.strftime('%Y-%m-%d %H')+' UTC'
+        date = date.strftime('%H UTC %d%b%y')
         self.axes[i].text(0.03, 0.05, date,
                           horizontalalignment='left',
                           verticalalignment='bottom',
@@ -427,7 +435,7 @@ class create(object):
             if i == 0:
                 self.axes[i].annotate(label, xy=(-123.09, 38.30),
                                       xycoords='data',
-                                      xytext=(-121.0, 41.),
+                                      xytext=(-121.9, 41.),
                                       textcoords='data',
                                       size=15,
                                       color='b',

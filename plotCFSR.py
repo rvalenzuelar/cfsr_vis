@@ -5,10 +5,11 @@
 # August, 2015
 #
 
-from glob import glob
 import os
 import CFSR
-
+#import numpy as np
+from glob import glob
+from rv_utilities import discrete_cmap
 
 def plot(case=None, field=None, dates=None, ax=None,
          contour=None, clevels=None, basedir=None, homedir=None):
@@ -121,9 +122,12 @@ def plot(case=None, field=None, dates=None, ax=None,
         if field[1] is not None:
             clev = field[1]
         else:
-            clev = range(300, 1700, 200)
-        cfsr.iwv_flux(clevels=clev, cmap='YlGn',
-                      jump=8, width=1.2, scale=50, key=800, colorkey='k')
+            clev = range(250, 1500, 250)
+        N = len(clev) - 1
+        cmap = discrete_cmap(N, norm_range=[0.3,1.0], base_cmap='YlGn')
+        cfsr.iwv_flux(clevels=clev, cmap=cmap,
+#                      vectors=dict(jump=8, width=1.2, scale=50, key=800, colorkey='k'),
+                      vectors=None)
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
         cfsr.add_title()
@@ -138,8 +142,6 @@ def plot(case=None, field=None, dates=None, ax=None,
             cfsr.thetaeq(filled=False, level=1000,
                          clevels=clev)
             cfsr.add_title()
-
-    cfsr.show('ipython')
 
 
 def get_dates(case):
