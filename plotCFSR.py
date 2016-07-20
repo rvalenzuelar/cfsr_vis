@@ -115,7 +115,7 @@ def plot(case=None, field=None, dates=None, ax=None,
                         scale=1.5, key=20, colorkey='b')
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
-        cfsr.add_title()
+#        cfsr.add_title()
         cfsr.add_location('bby')
 
     if field[0] == 'iwv_flux':
@@ -130,7 +130,7 @@ def plot(case=None, field=None, dates=None, ax=None,
                       vectors=None)
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
-        cfsr.add_title()
+#        cfsr.add_title()
         cfsr.add_location('bby')
 
     if contour is not None:
@@ -141,8 +141,9 @@ def plot(case=None, field=None, dates=None, ax=None,
                 clev = range(308, 340, 2)
             cfsr.thetaeq(filled=False, level=1000,
                          clevels=clev)
-            cfsr.add_title()
+#            cfsr.add_title()
 
+    return cfsr
 
 def get_dates(case):
     import pandas as pd
