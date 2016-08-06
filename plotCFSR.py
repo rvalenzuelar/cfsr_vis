@@ -12,7 +12,8 @@ from glob import glob
 from rv_utilities import discrete_cmap
 
 def plot(case=None, field=None, dates=None, ax=None,
-         contour=None, clevels=None, basedir=None, homedir=None):
+         contour=None, clevels=None, basedir=None,
+         homedir=None, title=None):
 
     lonleft = -150
     lonright = -116
@@ -130,7 +131,13 @@ def plot(case=None, field=None, dates=None, ax=None,
                       vectors=None)
         cfsr.surfpressure(clevels=range(980, 1034, 4))
         cfsr.add_coast(res='c')
-#        cfsr.add_title()
+
+        if title is None:
+            cfsr.add_title()
+        else:
+            cfsr.title = title
+            cfsr.add_title()
+            
         cfsr.add_location('bby')
 
     if contour is not None:

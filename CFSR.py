@@ -256,8 +256,7 @@ class create(object):
                               backgroundcolor='w', zorder=100000,
                               transform=self.axes[i].transAxes)
             self.add_date(i)
-
-        self.title += 'Integrated water vapor transport [kg m-1 s-1]\n '
+            self.title += 'Integrated water vapor transport $[kg m^{-1} s^{-1}]$\n '
 
     def absvort(self, **kwargs):
         self.initialize_plot()
@@ -406,8 +405,9 @@ class create(object):
                 xlinec2, ylinec2, color='k', linewidth=1,   linestyle='-')
 
             ''' I had to comment line 1905 and 1949 in
-            basemap/_init_.py so tickmarks show
-            up when using these methods'''
+                basemap/_init_.py (set_axis_limits) so 
+                tickmarks show up when using these methods
+            '''
             M.drawcountries(ax=self.axes[i])
             M.drawstates(ax=self.axes[i])
 

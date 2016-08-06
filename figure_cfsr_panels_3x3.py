@@ -81,9 +81,9 @@ ax.text(0.35,0.38,'K',transform=ax.transAxes,rotation=30,
         color='r',weight='bold')
 
     
-#plt.show()
-
-fname='/home/raul/Desktop/cfsr_panels.png'
-plt.savefig(fname, dpi=300, format='png',papertype='letter',
-            bbox_inches='tight')
+plt.show()
+#
+#fname='/home/raul/Desktop/cfsr_panels.png'
+#plt.savefig(fname, dpi=300, format='png',papertype='letter',
+#            bbox_inches='tight')
 
