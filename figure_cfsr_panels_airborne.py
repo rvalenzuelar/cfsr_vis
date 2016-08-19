@@ -67,19 +67,27 @@ grid = ImageGrid(fig, 111,
                  cbar_size='2%',
                  aspect=True)
 
+''' set tile '''
+title  = 'Integrated water vapor transport $[kg m^{-1} s^{-1}]$\n '
+title += 'Mean sea level pressure [hPa]\n'
+title += 'Equivalent potential temperature [K] at 1000 hPa'
+
 # homedir = '/media/raul/RauLdisk'
 #homedir = '/Volumes/RauLdisk'
 homedir = '/localdata'
-cf = cfsr.plot(ax=grid,
-          field=['iwv_flux',range(250, 1500, 250)],
-          contour=['thetaeq',range(304, 340, 2)],
-          dates=dates,
-          homedir=homedir)
+cf = cfsr.plot(ax     = grid,
+              field   = ['iwv_flux',range(250, 1500, 250)],
+              contour = ['thetaeq',range(304, 340, 2)],
+              dates   = dates,
+              homedir = homedir,
+              title   = '')
 
+''' add title at correct position '''
+ax = grid.axes_all[1]
+ax.text(0.5,1.2,title,ha='center',
+        transform=ax.transAxes)
 
-grid[1].text(0.5,1.1,cf.title,transform=grid[1].transAxes,
-            ha='center',va='bottom',fontsize=15)
-
+''' adjust y and x labels '''
 for n in [0,3]:
     yticks = grid.axes_all[n].yaxis.get_major_ticks()
     yticks[0].label1.set_visible(False)
@@ -90,7 +98,23 @@ for n in [3,4,5]:
     for p in range(0,len(xticks),2):
         xticks[p].label1.set_visible(False)
 
+axes = grid.axes_all[::3]
+for ax in axes:
+    yticks = ax.yaxis.get_major_ticks()
+    yticks[0].label1.set_visible(False)
+    yticks[-1].label1.set_visible(False)
+    ylabs = [str(n)+'$^\circ$' for n in range(20,55,5)]
+    ylabs[-1] = ylabs[-1]+'N'
+    ax.set_yticklabels(ylabs)
+    for tk in yticks:
+        tk.label1.set_rotation(90)    
+    xticks = ax.xaxis.get_major_ticks()
+    xlabs = [str(n)+'$^\circ$' for n in range(150,115,-5)]
+    xlabs[1] = xlabs[1]+'W'
+    ax.set_xticklabels(xlabs)
 
+
+''' add units to some contours '''
 ax = grid.axes_all[0]
 ax.text(0.54,0.83,'hPa',transform=ax.transAxes,rotation=24,weight='bold')
 ax.text(0.40,0.28,'K',transform=ax.transAxes,rotation=25,
@@ -99,7 +123,7 @@ ax.text(0.40,0.28,'K',transform=ax.transAxes,rotation=25,
     
 #plt.show()
 
-fname='/home/raul/Desktop/cfsr_panels_airborne.png'
+fname='/home/raul/Desktop/fig_cfsr_panels_airborne.png'
 plt.savefig(fname, dpi=300, format='png',papertype='letter',
             bbox_inches='tight')
 

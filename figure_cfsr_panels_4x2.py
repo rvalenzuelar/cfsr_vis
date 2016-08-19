@@ -46,6 +46,7 @@ grid = ImageGrid(fig, 111,
 #homedir = '/Volumes/RauLdisk'
 homedir = '/localdata'
 
+''' set tile '''
 title  = 'Integrated water vapor transport $[kg m^{-1} s^{-1}]$\n '
 title += 'Mean sea level pressure [hPa]\n'
 title += 'Equivalent potential temperature [K] at 1000 hPa'
@@ -73,7 +74,6 @@ for ax in axes:
     ax.set_yticklabels(ylabs)
     for tk in yticks:
         tk.label1.set_rotation(90)    
-        
     xticks = ax.xaxis.get_major_ticks()
     xlabs = [str(n)+'$^\circ$' for n in range(150,115,-5)]
     xlabs[-1] = xlabs[-1]+'W'
@@ -86,9 +86,9 @@ ax.text(0.35,0.38,'K',transform=ax.transAxes,rotation=30,
         color='r',weight='bold')
 
     
-#plt.show()
+plt.show()
 
-fname='/home/raul/Desktop/cfsr_panels.png'
-plt.savefig(fname, dpi=300, format='png',papertype='letter',
-            bbox_inches='tight')
+#fname='/home/raul/Desktop/fig_cfsr_panels.png'
+#plt.savefig(fname, dpi=300, format='png',papertype='letter',
+#            bbox_inches='tight')
 
